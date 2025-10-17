@@ -2,37 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover"
-/>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Scribble Note — Pen & Pad</title>
-<!-- Logo font (used on chronograph): Saira Semi Condensed -->
 <link href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#f4fff7;
-    --dots:#7aa68a;
-    --ui:#0e2b1f;
-    --ui-muted:#5c7a6a;
-
-    --accent:#1aa36f;
-    --accent-2:#0d8157;
-
-    --tear:#e9752a;           /* burnt orange */
-    --tear-pressed:#c7611f;
-
-    --shadow:rgba(0,0,0,.25);
-    --perforation:#d2e8db;
+    --paper:#f4fff7; --dots:#7aa68a; --ui:#0e2b1f; --ui-muted:#5c7a6a;
+    --accent:#1aa36f; --accent-2:#0d8157;
+    --tear:#e9752a; --tear-pressed:#c7611f;
+    --shadow:rgba(0,0,0,.25); --perforation:#d2e8db;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
-  body{
-    min-height:100svh;
-    background:var(--paper);
-    color:var(--ui);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
-  }
+  body{min-height:100svh;background:var(--paper);color:var(--ui);
+       font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif}
   .wrap{position:relative;width:100%;min-height:100svh;height:100%;overflow:hidden}
 
   .toolbar{
@@ -44,21 +27,11 @@
     box-shadow:0 6px 18px var(--shadow);z-index:3;user-select:none;
   }
 
-  /* Title hierarchy */
-  .title{
-    display:flex; flex-direction:column; line-height:1.05;
-    margin-right:6px;
-  }
-  .title-main{
-    font-weight:700; letter-spacing:.2px; font-size:1.05rem; color:var(--ui);
-  }
-  .title-sub{
-    margin-top:2px; font-size:.78rem; color:var(--ui-muted);
-  }
-  .title-sub .oh{
-    font-family:"Saira Semi Condensed", system-ui, sans-serif;
-    text-transform:uppercase; letter-spacing:.08em; font-weight:600;
-  }
+  /* Title */
+  .title{display:flex;flex-direction:column;line-height:1.05;margin-right:6px}
+  .title-main{font-weight:700;letter-spacing:.2px;font-size:1.05rem;color:var(--ui)}
+  .title-sub{margin-top:2px;font-size:.78rem;color:var(--ui-muted)}
+  .title-sub .oh{font-family:"Saira Semi Condensed",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
 
   .btn{
     appearance:none;border:0;outline:0;cursor:pointer;
@@ -66,33 +39,22 @@
     transition:transform .05s ease,background .15s ease,box-shadow .15s ease;
   }
   .btn:active{transform:translateY(1px)}
-
   .btn.tear{background:var(--tear);color:#fff}
   .btn.tear:active{background:var(--tear-pressed)}
-
-  .btn.secondary{
-    background:transparent;color:var(--ui);
-    border:1px solid rgba(0,0,0,.12);
-  }
+  .btn.secondary{background:transparent;color:var(--ui);border:1px solid rgba(0,0,0,.12)}
   .btn.secondary:hover{background:rgba(0,0,0,.04)}
   .btn.secondary:active{background:rgba(0,0,0,.08)}
-
-  .btn.toggle.active{
-    background:rgba(0,0,0,.04);
-    box-shadow:inset 0 0 0 2px rgba(0,0,0,.12);
-  }
+  .btn.toggle.active{background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 2px rgba(0,0,0,.12)}
   .btn.toggle.active:active{background:rgba(0,0,0,.08)}
 
   .control{display:flex;align-items:center;gap:8px;font-size:.9rem}
-  .select,.range,.number{
-    padding:6px 8px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.8)
-  }
+  .select,.range,.number{padding:6px 8px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.8)}
   input[type=range]{accent-color:var(--accent)}
   label{color:var(--ui-muted)}
   .hint{font-size:.85rem;color:var(--ui-muted)}
 
   canvas#grid,canvas#ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
-  canvas#grid{z-index:0}canvas#ink{z-index:1}
+  canvas#grid{z-index:0} canvas#ink{z-index:1}
 
   .tear-overlay{
     pointer-events:none;position:absolute;left:0;right:0;top:58px;height:14px;z-index:2;
@@ -102,19 +64,12 @@
   }
   .page{position:absolute;inset:0;background:transparent;z-index:2;transform-origin:top center;pointer-events:none}
   .page.tearing{animation:tearAway .7s ease-in forwards}
-  @keyframes tearAway{
-    0%{transform:translateY(0) rotate(0);filter:drop-shadow(0 12px 18px var(--shadow))}
-    30%{transform:translateY(6px) rotate(-.3deg)}
-    100%{transform:translateY(-110%) rotate(-2deg);opacity:0}
-  }
+  @keyframes tearAway{0%{transform:translateY(0) rotate(0);filter:drop-shadow(0 12px 18px var(--shadow))}
+                      30%{transform:translateY(6px) rotate(-.3deg)}
+                      100%{transform:translateY(-110%) rotate(-2deg);opacity:0}}
 
-  .badge{
-    position:absolute;right:10px;bottom:10px;z-index:3;
-    font-size:.75rem;color:var(--ui-muted);background:rgba(255,255,255,.5);
-    border:1px solid rgba(0,0,0,.08);padding:6px 8px;border-radius:10px;backdrop-filter:blur(4px);
-  }
-
-  /* tiny status dot (optional for debugging) */
+  .badge{position:absolute;right:10px;bottom:10px;z-index:3;font-size:.75rem;color:var(--ui-muted);
+         background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.08);padding:6px 8px;border-radius:10px;backdrop-filter:blur(4px)}
   .status{position:fixed;left:8px;bottom:8px;width:10px;height:10px;border-radius:50%;background:#bbb;z-index:4}
   .status.ok{background:#24c768}
 </style>
@@ -130,7 +85,7 @@
     <button class="btn tear" id="tear">Tear Off</button>
     <button class="btn secondary" id="clear">New Page</button>
     <button class="btn secondary" id="undoBtn">Undo</button>
-    <!-- True toggle: shows current mode (Draw when drawing, Type when typing) -->
+    <!-- Toggle shows CURRENT mode: Draw (drawing) / Type (typing) -->
     <button class="btn secondary toggle" id="typeToggle" aria-pressed="false">Draw</button>
 
     <div class="control">
@@ -168,19 +123,9 @@
 
 <script>
 (()=>{
-  /* ===== Core setup ===== */
-  const statusEl=document.getElementById("status");
-  const markOK=()=>statusEl.classList.add("ok");
-
-  const grid=document.getElementById("grid");
-  const ink=document.getElementById("ink");
-  const gtx=grid.getContext("2d");
-  const ctx=ink.getContext("2d");
-  ctx.lineCap="round";ctx.lineJoin="round";
-
-  function getDPR(){return Math.max(1,window.devicePixelRatio||1)}
-  let dpr=getDPR();
-
+  /* ===== Core ===== */
+  const grid=document.getElementById("grid"), ink=document.getElementById("ink");
+  const gtx=grid.getContext("2d"), ctx=ink.getContext("2d");
   const ui={
     tear:document.getElementById("tear"),
     clear:document.getElementById("clear"),
@@ -190,34 +135,66 @@
     smooth:document.getElementById("smooth"),
     fontSel:document.getElementById("fontSel"),
     fontSize:document.getElementById("fontSize"),
-    pageAnim:document.getElementById("pageAnim"),
+    pageAnim:document.getElementById("pageAnim")
   };
+  ctx.lineCap="round"; ctx.lineJoin="round";
 
-  /* ===== Resize & layout stability ===== */
-  let suspendResize=false;
+  function getDPR(){ return Math.max(1, window.devicePixelRatio || 1); }
+  let dpr=getDPR();
+
+  /* ===== Stability guards ===== */
+  let suspendResize=false;         // normal lock while typing
+  let keyboardLock=false;          // lock while virtual keyboard is open
+  let ignoreResizeUntil=0;         // micro-guard after toggles
   let resizeTimer=null;
-  const DEBOUNCE_MS=180;
+  const DEBOUNCE_MS=180, MICRO_GUARD_MS=250;
+
+  function now(){ return performance.now(); }
 
   function debouncedResizeAll(){
-    if(suspendResize) return;
+    if (suspendResize || keyboardLock || now() < ignoreResizeUntil) return;
     clearTimeout(resizeTimer);
-    resizeTimer=setTimeout(resizeAll,DEBOUNCE_MS);
+    resizeTimer = setTimeout(resizeAll, DEBOUNCE_MS);
   }
   function sizeCanvas(c){
     const r=c.getBoundingClientRect();
-    let w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);
-    if(w<2||h<2){ w=Math.round(innerWidth*dpr); h=Math.round(innerHeight*dpr); }
+    let w=Math.round(r.width*dpr), h=Math.round(r.height*dpr);
+    if (w<2 || h<2){ w=Math.round(innerWidth*dpr); h=Math.round(innerHeight*dpr); }
     c.width=w; c.height=h;
   }
   function resizeAll(){
+    if (suspendResize || keyboardLock || now() < ignoreResizeUntil) return;
     dpr=getDPR();
     sizeCanvas(grid); sizeCanvas(ink);
     drawGrid(); redraw();
-    markOK();
   }
-  window.addEventListener("resize",debouncedResizeAll,{passive:true});
-  window.addEventListener("load",()=>{ requestAnimationFrame(()=>{ resizeAll(); requestAnimationFrame(resizeAll); }); });
-  new ResizeObserver(()=>debouncedResizeAll()).observe(document.body);
+
+  // VisualViewport guard (keyboard open/close)
+  if (window.visualViewport){
+    let lastVVH = window.visualViewport.height;
+    window.visualViewport.addEventListener('resize', ()=>{
+      const vvh = window.visualViewport.height;
+      const delta = lastVVH - vvh;
+      // Heuristic: if height shrinks > 60px, assume keyboard opened
+      if (delta > 60){ keyboardLock = true; }
+      // If height recovers near previous, keyboard likely closed
+      if (vvh >= lastVVH - 10){ keyboardLock = false; debouncedResizeAll(); }
+      lastVVH = vvh;
+    }, {passive:true});
+  }
+
+  // Repaint on font load / page resume / rotate
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(()=>{ redraw(); });
+    document.fonts.addEventListener?.('loadingdone', ()=>{ redraw(); });
+  }
+  document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='visible') { debouncedResizeAll(); redraw(); } });
+  window.addEventListener('pageshow', ()=>{ debouncedResizeAll(); redraw(); });
+  window.addEventListener('orientationchange', ()=>{ debouncedResizeAll(); });
+
+  window.addEventListener('resize', debouncedResizeAll, {passive:true});
+  window.addEventListener('load', ()=>{ requestAnimationFrame(()=>{ resizeAll(); requestAnimationFrame(resizeAll); }); });
+  new ResizeObserver(()=> debouncedResizeAll()).observe(document.body);
 
   /* ===== Grid ===== */
   function drawGrid(){
@@ -234,42 +211,34 @@
     }
   }
 
-  /* ===== State ===== */
-  let strokes=[];    // {points:[{x,y,t,p}], color, base, smooth}
-  let texts=[];      // {x,y,lines:[...], font, size}
-  let history=[];    // {type:'stroke'|'text'}
-
+  /* ===== Model ===== */
+  let strokes=[], texts=[], history=[];
   let isDrawing=false, current=null;
-  let typeMode=false;          // default to drawing on load
+  let typeMode=false; // default draw
   let typing=false, activeText=null;
   let caretVisible=true, caretTimer=null;
-  let dragInfo=null; // {text, dx, dy, dragging}
+  let dragInfo=null;
 
-  /* ===== Utils ===== */
+  /* ===== Helpers ===== */
   function toCanvasCoords(e){
     const r=ink.getBoundingClientRect();
     const x=(e.clientX-r.left)*dpr, y=(e.clientY-r.top)*dpr;
     const p=(typeof e.pressure==="number" && e.pressure>0)? e.pressure : .3;
     return {x,y,p,t:performance.now()};
   }
-
-  /* ===== Pen smoothing ===== */
   function strokeWidth(i,pts,base){
     const p=pts[i], prev=pts[i-1]||p;
     const dx=p.x-prev.x, dy=p.y-prev.y, dt=Math.max(.1,(p.t-prev.t));
-    const v=Math.hypot(dx,dy)/dt;
-    const min=.6,max=2.2;
-    const pressure=(p.p>.05)? (.5+p.p*.9) : 1;
+    const v=Math.hypot(dx,dy)/dt, min=.6,max=2.2, pressure=(p.p>.05)?(.5+p.p*.9):1;
     return base*(min+(max-min)*(1/(1+v*14)))*pressure;
   }
   function drawPath(pts,color,base,smooth){
     if(pts.length<2) return;
     ctx.save(); ctx.strokeStyle=color; ctx.beginPath();
-    const L=(a,b,t)=>a+(b-a)*t;
-    const midpt=(a,b,s)=>({x:L(a.x,b.x,s), y:L(a.y,b.y,s), p:L(a.p,b.p,s), t:L(a.t,b.t,s)});
+    const L=(a,b,t)=>a+(b-a)*t, mid=(a,b,s)=>({x:L(a.x,b.x,s),y:L(a.y,b.y,s),p:L(a.p,b.p,s),t:L(a.t,b.t,s)});
     let p0=pts[0]; ctx.moveTo(p0.x,p0.y);
     for(let i=1;i<pts.length;i++){
-      const p1=pts[i], m=midpt(p0,p1,.5+(smooth-.5)*.6);
+      const p1=pts[i], m=mid(p0,p1,.5+(smooth-.5)*.6);
       ctx.lineWidth=strokeWidth(i,pts,base*dpr);
       ctx.quadraticCurveTo(p0.x,p0.y,m.x,m.y);
       p0=p1;
@@ -277,7 +246,7 @@
     ctx.stroke(); ctx.restore();
   }
 
-  /* ===== Text rendering ===== */
+  /* ===== Text ===== */
   function setCanvasFont(font,sizePx){
     const DEF="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
     const stack=(typeof font==="string" && font.trim().length)? font : DEF;
@@ -290,23 +259,23 @@
     if(!t || !Array.isArray(t.lines)) return;
     if(t.lines.length===0) t.lines=[""];
     setCanvasFont(t.font,t.size);
-    const lineH=Math.round(t.size*1.35)*dpr;
+    const lh=Math.round(t.size*1.35)*dpr;
     let y=t.y;
-    for(const line of t.lines){ ctx.fillText(line,t.x,y); y+=lineH; }
+    for(const line of t.lines){ ctx.fillText(line,t.x,y); y+=lh; }
   }
   function drawCaretFor(t){
     if(!typing || !caretVisible || t!==activeText) return;
     setCanvasFont(t.font,t.size);
-    const lineH=Math.round(t.size*1.35)*dpr;
+    const lh=Math.round(t.size*1.35)*dpr;
     const last=t.lines[t.lines.length-1]||"";
     const x=t.x+ctx.measureText(last).width+2*dpr;
-    const yBase=t.y+(t.lines.length-1)*lineH;
+    const yb=t.y+(t.lines.length-1)*lh;
     ctx.save();
     ctx.strokeStyle="rgba(12,30,22,.9)";
     ctx.lineWidth=1.5*dpr;
     ctx.beginPath();
-    ctx.moveTo(x, yBase-(t.size*1.05*dpr));
-    ctx.lineTo(x, yBase+(t.size*.25*dpr));
+    ctx.moveTo(x, yb-(t.size*1.05*dpr));
+    ctx.lineTo(x, yb+(t.size*.25*dpr));
     ctx.stroke();
     ctx.restore();
   }
@@ -314,9 +283,9 @@
     for(let i=texts.length-1;i>=0;i--){
       const t=texts[i];
       setCanvasFont(t.font,t.size);
-      const lineH=Math.round(t.size*1.35)*dpr;
+      const lh=Math.round(t.size*1.35)*dpr;
       const w=Math.max(...t.lines.map(l=>ctx.measureText(l).width), 20*dpr);
-      const h=Math.max(lineH*t.lines.length, lineH);
+      const h=Math.max(lh*t.lines.length, lh);
       const L=t.x-4*dpr, T=t.y-(t.size*1.05*dpr);
       if(x>=L && x<=L+w+8*dpr && y>=T && y<=T+h+6*dpr) return {t,i};
     }
@@ -354,7 +323,6 @@
   }
   function endTypingPointer(){ dragInfo=null; }
   function handleKey(e){
-    // Esc key still exits Type mode (no Esc button in UI)
     if(e.key==="Escape"){ if(typeMode){ setTypeMode(false); } return; }
     if(!typeMode || !activeText) return;
     if(e.key==="Enter"){ e.preventDefault(); activeText.lines.push(""); redraw(); return; }
@@ -374,11 +342,7 @@
   function stopCaretBlink(){ if(caretTimer){ clearInterval(caretTimer); caretTimer=null; } caretVisible=true; }
 
   /* ===== Pen interactions ===== */
-  function startStroke(e){
-    isDrawing=true;
-    current={ points:[], color:"#0c1e16", base:parseFloat(ui.thick.value), smooth:parseFloat(ui.smooth.value) };
-    current.points.push(toCanvasCoords(e));
-  }
+  function startStroke(e){ isDrawing=true; current={points:[],color:"#0c1e16",base:parseFloat(ui.thick.value),smooth:parseFloat(ui.smooth.value)}; current.points.push(toCanvasCoords(e)); }
   function extendStroke(e){ if(!isDrawing||!current) return; current.points.push(toCanvasCoords(e)); redraw(); }
   function endStroke(){ if(!isDrawing||!current) return; strokes.push(current); history.push({type:"stroke"}); current=null; isDrawing=false; redraw(); }
 
@@ -393,30 +357,28 @@
 
   /* ===== Mode toggle (button ONLY) ===== */
   function setTypeMode(on){
+    // micro-guard BEFORE DOM changes
+    ignoreResizeUntil = now() + MICRO_GUARD_MS;
+
     typeMode=on;
     ui.typeToggle.classList.toggle("active",on);
-    // Show CURRENT mode on the button
-    ui.typeToggle.textContent = on ? "Type" : "Draw";
+    ui.typeToggle.textContent = on ? "Type" : "Draw"; // show CURRENT mode
     ui.typeToggle.setAttribute("aria-pressed", on ? "true" : "false");
-    // Freeze layout while typing (prevents keyboard-induced clears/DPR jumps)
-    suspendResize=on;
+
+    suspendResize = on; // prevent keyboard/toolbar layout clears
 
     if(!on){
       typing=false; activeText=null; stopCaretBlink();
       redraw();
-      debouncedResizeAll(); // catch up layout after leaving typing
+      debouncedResizeAll(); // catch up after leaving typing
     }
   }
   ui.typeToggle.addEventListener("click",()=> setTypeMode(!typeMode));
 
-  /* ===== Buttons: Undo ===== */
+  /* ===== Buttons ===== */
   function doUndo(){
     const last=history.pop();
-    if(last){
-      if(last.type==="stroke") strokes.pop();
-      else if(last.type==="text") texts.pop();
-      redraw();
-    }
+    if(last){ if(last.type==="stroke") strokes.pop(); else if(last.type==="text") texts.pop(); redraw(); }
   }
   ui.undoBtn.addEventListener("click", doUndo);
 
@@ -434,7 +396,7 @@
 
   /* ===== Keyboard ===== */
   window.addEventListener("keydown",e=>{
-    if(e.key.toLowerCase()==="u"){ doUndo(); return; }  // global Undo
+    if(e.key.toLowerCase()==="u"){ doUndo(); return; }
     handleKey(e);
   });
 
@@ -445,33 +407,21 @@
   ui.smooth.addEventListener("input",()=>{ if(current) current.smooth=parseFloat(ui.smooth.value); });
 
   /* ===== New Page ===== */
-  function flashPerforation(){
-    ui.pageAnim.classList.remove("tearing"); void ui.pageAnim.offsetWidth;
-    ui.pageAnim.classList.add("tearing");
-    setTimeout(()=> ui.pageAnim.classList.remove("tearing"), 800);
-  }
-  ui.clear.addEventListener("click",()=>{
-    strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink();
-    redraw(); flashPerforation();
-  });
+  function flashPerforation(){ ui.pageAnim.classList.remove("tearing"); void ui.pageAnim.offsetWidth; ui.pageAnim.classList.add("tearing"); setTimeout(()=> ui.pageAnim.classList.remove("tearing"), 800); }
+  ui.clear.addEventListener("click",()=>{ strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink(); redraw(); flashPerforation(); });
 
-  /* ===== Tear Off (download + reset) ===== */
+  /* ===== Tear Off ===== */
   ui.tear.addEventListener("click",()=>{
     const off=document.createElement("canvas");
     off.width=grid.width; off.height=grid.height;
     const otx=off.getContext("2d");
-    otx.drawImage(grid,0,0);
-    otx.drawImage(ink,0,0);
-
+    otx.drawImage(grid,0,0); otx.drawImage(ink,0,0);
     const ts=new Date(), pad=n=>String(n).padStart(2,"0");
     const name=`scribble_${ts.getFullYear()}-${pad(ts.getMonth()+1)}-${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.png`;
     off.toBlob(blob=>{
-      const a=document.createElement("a");
-      a.download=name; a.href=URL.createObjectURL(blob);
-      document.body.appendChild(a); a.click();
-      URL.revokeObjectURL(a.href); a.remove();
+      const a=document.createElement("a"); a.download=name; a.href=URL.createObjectURL(blob);
+      document.body.appendChild(a); a.click(); URL.revokeObjectURL(a.href); a.remove();
     },"image/png");
-
     flashPerforation();
     setTimeout(()=>{ strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink(); redraw(); }, 380);
   });
