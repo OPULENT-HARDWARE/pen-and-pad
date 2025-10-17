@@ -27,7 +27,7 @@
   }
   .wrap{position:relative;width:100%;min-height:100svh;height:100%;overflow:hidden}
 
-  /* Toolbar: edge-to-edge, wraps if needed */
+  /* Toolbar */
   .toolbar{
     position:absolute; top:8px; left:8px; right:8px;
     display:flex; flex-wrap:wrap; align-items:center; gap:12px;
@@ -37,8 +37,6 @@
     box-shadow:0 6px 18px var(--shadow); z-index:6; user-select:none;
   }
   .toolbar.collapsed{ gap:6px; padding:6px 8px; }
-
-  /* Title */
   .title{display:flex;flex-direction:column;line-height:1.05;margin-right:6px; white-space:nowrap}
   .title-main{font-weight:700;letter-spacing:.2px;font-size:1.05rem;color:var(--ui)}
   .title-sub{margin-top:2px;font-size:.78rem;color:var(--ui-muted)}
@@ -46,11 +44,9 @@
   .toolbar.collapsed .title-main{font-size:.95rem}
   .toolbar.collapsed .title-sub{font-size:.7rem}
 
-  .btn{
-    appearance:none;border:0;outline:0;cursor:pointer;
+  .btn{appearance:none;border:0;outline:0;cursor:pointer;
     padding:8px 12px;border-radius:12px;font-weight:600;
-    transition:transform .05s ease,background .15s ease,box-shadow .15s ease;
-  }
+    transition:transform .05s ease,background .15s ease,box-shadow .15s ease;}
   .btn:active{transform:translateY(1px)}
   .btn.tear{background:var(--tear);color:#fff}
   .btn.tear:active{background:var(--tear-pressed)}
@@ -63,31 +59,20 @@
   .hint{font-size:.85rem;color:var(--ui-muted);white-space:nowrap}
   .toolbar.collapsed .hint{display:none}
 
-  /* Segmented pill: Draw | Type */
-  .seg{
-    display:inline-flex; border-radius:9999px; padding:3px; gap:2px;
-    background:var(--seg-bg); border:1px solid var(--seg-border);
-  }
-  .seg button{
-    border:0; background:transparent; padding:6px 12px; border-radius:9999px;
-    font-weight:600; cursor:pointer;
-    transition:background .15s ease, box-shadow .15s ease, transform .05s ease;
-  }
+  /* Segmented pill */
+  .seg{display:inline-flex; border-radius:9999px; padding:3px; gap:2px;
+    background:var(--seg-bg); border:1px solid var(--seg-border);}
+  .seg button{border:0; background:transparent; padding:6px 12px; border-radius:9999px;
+    font-weight:600; cursor:pointer; transition:background .15s ease, box-shadow .15s ease, transform .05s ease;}
   .seg button:active{ transform:translateY(1px) }
-  .seg button.active{
-    background:var(--seg-active); box-shadow:0 1px 0 rgba(0,0,0,.06), 0 0 0 1px var(--seg-active-border) inset;
-  }
+  .seg button.active{ background:var(--seg-active); box-shadow:0 1px 0 rgba(0,0,0,.06), 0 0 0 1px var(--seg-active-border) inset; }
 
-  /* Controls row */
   .controls-row{display:flex;align-items:center;gap:10px; flex-wrap:wrap}
   .control{display:flex;align-items:center;gap:8px;font-size:.9rem;white-space:nowrap}
-  .select,.range,.number{
-    padding:6px 8px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.85)
-  }
+  .select,.range,.number{padding:6px 8px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.85)}
   input[type=range]{accent-color:var(--accent)}
   label{color:var(--ui-muted)}
 
-  /* Ellipsis + Popover */
   .more{display:none}
   .toolbar.collapsed .more{display:inline-flex}
   .popover{
@@ -99,10 +84,8 @@
   }
   .popover.open{display:block}
   .popover .row{display:flex;align-items:center;gap:10px; margin:8px 0; flex-wrap:wrap}
-  .popover .row .control{flex:1 1 auto}
   .popover .line{height:1px;background:rgba(0,0,0,.08);margin:8px 0}
 
-  /* Collapse chevron */
   .collapse-btn{margin-left:auto}
   .collapse-btn .chev{display:inline-block; transition:transform .18s ease}
   .toolbar.collapsed .collapse-btn .chev{transform:rotate(180deg)}
@@ -111,7 +94,6 @@
   canvas#grid,canvas#ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   canvas#grid{z-index:0} canvas#ink{z-index:1}
 
-  /* Perforation (visual) */
   .tear-overlay{
     pointer-events:none;position:absolute;left:0;right:0;top:58px;height:14px;z-index:2;
     background:repeating-linear-gradient(90deg,transparent 0 16px,var(--perforation) 16px 18px),
@@ -126,43 +108,33 @@
     100%{transform:translateY(-110%) rotate(-2deg);opacity:0}
   }
 
-  .badge{
-    position:absolute;right:10px;bottom:10px;z-index:3;
-    font-size:.75rem;color:var(--ui-muted);background:rgba(255,255,255,.5);
-    border:1px solid rgba(0,0,0,.08);padding:6px 8px;border-radius:10px;backdrop-filter:blur(4px);
-  }
+  .badge{position:absolute;right:10px;bottom:10px;z-index:3;font-size:.75rem;color:#4a6a5b;
+    background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.08);padding:6px 8px;border-radius:10px;backdrop-filter:blur(4px);}
 
-  .status{position:fixed;left:8px;bottom:8px;width:10px;height:10px;border-radius:50%;background:#bbb;z-index:4}
+  .status{position:fixed;left:8px;bottom:8px;width:12px;height:12px;border-radius:50%;background:#c23a3a;z-index:9;cursor:pointer}
   .status.ok{background:#24c768}
 
-  /* Inline editor (contenteditable) */
+  /* Inline editor */
   #inlineEditor{
-    position:absolute; z-index:4; /* above canvas, below toolbar/popover */
+    position:absolute; z-index:4;
     min-width:1px; background:transparent; color:#0c1e16;
-    outline:0; border:0; padding:6px 8px; margin:0;
+    outline:0; border:var(--editor-border); border-radius:8px;
+    padding:6px 8px; margin:0;
     white-space:pre-wrap; word-break:break-word;
     -webkit-user-select:text; user-select:text;
     caret-color:#0c1e16;
-    display:none;
-    pointer-events:none; /* off unless editing */
-    border: var(--editor-border);
-    border-radius:8px;
+    display:none; pointer-events:none;
   }
-
-  /* Editor mini-toolbar */
   .editbar{
     position:absolute; z-index:5; display:none;
     background:rgba(255,255,255,.9); backdrop-filter:blur(6px);
     border:1px solid rgba(0,0,0,.12); border-radius:10px;
     padding:4px; gap:6px; box-shadow:0 10px 22px rgba(0,0,0,.18);
   }
-  .editbar .ebtn{
-    border:0; border-radius:8px; padding:6px 10px; cursor:pointer; font-weight:600;
-    background:transparent; color:var(--ui); border:1px solid rgba(0,0,0,.12);
-  }
+  .editbar .ebtn{border:0; border-radius:8px; padding:6px 10px; cursor:pointer; font-weight:600;
+    background:transparent; color:var(--ui); border:1px solid rgba(0,0,0,.12);}
   .editbar .ebtn:active{ background:rgba(0,0,0,.08) }
 
-  /* Toast */
   .toast{
     position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
     background:rgba(17,51,38,.92); color:#fff; padding:8px 12px;
@@ -171,7 +143,6 @@
   }
   .toast.show{opacity:1}
 
-  /* Tablet compression */
   @media (min-width:768px) and (pointer:coarse){
     .toolbar{gap:10px}
     .btn{padding:7px 10px;border-radius:10px}
@@ -189,13 +160,11 @@
     <button class="btn tear" id="tear">Tear Off</button>
     <button class="btn secondary" id="undoBtn">Undo</button>
 
-    <!-- Segmented pill: Draw | Type -->
     <div class="seg" role="tablist" aria-label="Input mode">
       <button id="segDraw" role="tab" aria-selected="true" class="active" title="Draw mode">Draw</button>
       <button id="segType" role="tab" aria-selected="false" title="Type mode">Type</button>
     </div>
 
-    <!-- Expanded-only advanced controls -->
     <div class="controls-row" id="controlsRow">
       <button class="btn secondary" id="clear">New Page</button>
       <div class="control"><label for="fontSel">Font</label>
@@ -216,17 +185,13 @@
       </div>
     </div>
 
-    <!-- Collapsed-only: more (popover) -->
     <button class="btn secondary icon only more" id="moreBtn" aria-haspopup="true" aria-expanded="false" title="More">⋯</button>
-
-    <!-- Collapse chevron -->
     <button class="btn secondary icon only collapse-btn" id="collapseBtn" aria-expanded="false" title="Collapse/Expand toolbar">
       <span class="chev">▲</span>
     </button>
 
     <span class="hint">Default draw • Toggle Type to enter typing • Undo reverses last • <b>Tear Off saves your note</b></span>
 
-    <!-- Popover (collapsed mode) -->
     <div class="popover" id="popover" role="dialog" aria-label="More controls">
       <div class="row"><button class="btn secondary" id="clear2" style="width:100%">New Page</button></div>
       <div class="line"></div>
@@ -260,7 +225,6 @@
   <canvas id="ink"></canvas>
   <div class="badge">Dotted engineering paper • ink + typed text</div>
 
-  <!-- Floating inline editor + mini toolbar -->
   <div id="inlineEditor" contenteditable="true" spellcheck="true"></div>
   <div id="editbar" class="editbar">
     <button id="ebDone" class="ebtn">✓ Done</button>
@@ -269,520 +233,529 @@
 
   <div id="toast" class="toast">Saved</div>
 </div>
-<div id="status" class="status"></div>
+<div id="status" class="status" title="Tap to view last error"></div>
 
 <script>
-(()=>{
-  /* ================= Core setup ================= */
-  const toolbar = document.getElementById('toolbar');
-  const grid=document.getElementById("grid"), ink=document.getElementById("ink");
-  const gtx=grid.getContext("2d"), ctx=ink.getContext("2d");
-  ctx.lineCap="round"; ctx.lineJoin="round";
-
-  const ui={
-    tear:$("#tear"), clear:$("#clear"), clear2:$("#clear2"), undoBtn:$("#undoBtn"),
-    segDraw:$("#segDraw"), segType:$("#segType"),
-    thick:$("#thick"), smooth:$("#smooth"), fontSel:$("#fontSel"), fontSize:$("#fontSize"),
-    thick2:$("#thick2"), smooth2:$("#smooth2"), fontSel2:$("#fontSel2"), fontSize2:$("#fontSize2"),
-    pageAnim:$("#pageAnim"), moreBtn:$("#moreBtn"), popover:$("#popover"),
-    collapseBtn:$("#collapseBtn"), controlsRow:$("#controlsRow"),
-    inlineEditor:$("#inlineEditor"), editbar:$("#editbar"), ebDone:$("#ebDone"), ebCancel:$("#ebCancel"),
-    toast:$("#toast")
-  };
+(function(){
+  /* ---------- tiny helper ---------- */
   function $(id){ return document.getElementById(id); }
 
-  function getDPR(){ return Math.max(1, window.devicePixelRatio || 1); }
-  let dpr = getDPR();
-
-  /* ============== Stability guards (keyboard / viewport) ============== */
-  let suspendResize=false, keyboardLock=false, ignoreResizeUntil=0, resizeTimer=null;
-  const DEBOUNCE_MS=180, MICRO_GUARD_MS=250;
-  const now=()=>performance.now();
-
-  function debouncedResizeAll(){
-    if (suspendResize || keyboardLock || now()<ignoreResizeUntil) return;
-    clearTimeout(resizeTimer);
-    resizeTimer=setTimeout(resizeAll, DEBOUNCE_MS);
+  /* ---------- error guard + indicator ---------- */
+  const statusDot = $("status");
+  function setOK(v){ statusDot.classList.toggle("ok", !!v); }
+  function reportError(err){
+    console.error(err);
+    setOK(false);
+    statusDot.title = "Last error: " + (err && err.message ? err.message : String(err));
+    // also show a quick toast if we can
+    try{ toast("Error: " + (err.message||String(err))); }catch(_){}
   }
-  function sizeCanvas(c){
-    const r=c.getBoundingClientRect();
-    let w=Math.round(r.width*dpr), h=Math.round(r.height*dpr);
-    if (w<2 || h<2){ w=Math.round(innerWidth*dpr); h=Math.round(innerHeight*dpr); }
-    c.width=w; c.height=h;
-  }
-  function resizeAll(){
-    if (suspendResize || keyboardLock || now()<ignoreResizeUntil) return;
-    dpr=getDPR();
-    sizeCanvas(grid); sizeCanvas(ink);
-    drawGrid(); redraw();
-    if(typing && activeText) positionEditorUI(activeText);
-  }
+  window.addEventListener("error", e=>{ reportError(e.error||e.message||"Unknown error"); });
+  window.addEventListener("unhandledrejection", e=>{ reportError(e.reason||"Unhandled promise rejection"); });
 
-  if (window.visualViewport){
-    let lastVVH = window.visualViewport.height;
-    window.visualViewport.addEventListener('resize', ()=>{
-      const vvh=window.visualViewport.height, delta=lastVVH - vvh;
-      if (delta>60) keyboardLock=true;
-      if (vvh>=lastVVH-10){ keyboardLock=false; debouncedResizeAll(); }
-      lastVVH=vvh;
-    }, {passive:true});
-  }
+  try{
+    /* ================= Core setup ================= */
+    const toolbar = $("toolbar");
+    const grid=$("grid"), ink=$("ink");
+    const gtx=grid.getContext("2d"), ctx=ink.getContext("2d");
+    ctx.lineCap="round"; ctx.lineJoin="round";
 
-  if (document.fonts && document.fonts.ready){
-    document.fonts.ready.then(()=>{ redraw(); });
-    document.fonts.addEventListener?.('loadingdone', ()=>{ redraw(); });
-  }
-  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ debouncedResizeAll(); redraw(); } });
-  window.addEventListener('pageshow', ()=>{ debouncedResizeAll(); redraw(); });
-  window.addEventListener('orientationchange', ()=>{ debouncedResizeAll(); });
+    const ui={
+      tear:$("tear"), clear:$("clear"), clear2:$("clear2"), undoBtn:$("undoBtn"),
+      segDraw:$("segDraw"), segType:$("segType"),
+      thick:$("thick"), smooth:$("smooth"), fontSel:$("fontSel"), fontSize:$("fontSize"),
+      thick2:$("thick2"), smooth2:$("smooth2"), fontSel2:$("fontSel2"), fontSize2:$("fontSize2"),
+      pageAnim:$("pageAnim"), moreBtn:$("moreBtn"), popover:$("popover"),
+      collapseBtn:$("collapseBtn"), controlsRow:$("controlsRow"),
+      inlineEditor:$("inlineEditor"), editbar:$("editbar"), ebDone:$("ebDone"), ebCancel:$("ebCancel"),
+      toast:$("toast")
+    };
 
-  window.addEventListener('resize', debouncedResizeAll, {passive:true});
-  window.addEventListener('load', ()=>{ requestAnimationFrame(()=>{ resizeAll(); requestAnimationFrame(resizeAll); }); });
-  new ResizeObserver(()=> debouncedResizeAll()).observe(document.body);
+    function getDPR(){ return Math.max(1, window.devicePixelRatio || 1); }
+    let dpr = getDPR();
 
-  /* ================= Grid ================= */
-  function drawGrid(){
-    const {width:w,height:h}=grid;
-    gtx.clearRect(0,0,w,h);
-    gtx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--paper")||"#f4fff7";
-    gtx.fillRect(0,0,w,h);
-    const gap=20*dpr, r=.85*dpr;
-    gtx.fillStyle="rgba(122,166,138,.65)";
-    for(let y=gap/2;y<h;y+=gap){
-      for(let x=gap/2;x<w;x+=gap){
-        gtx.beginPath(); gtx.arc(x,y,r,0,Math.PI*2); gtx.fill();
+    /* ============== Stability guards (keyboard / viewport) ============== */
+    let suspendResize=false, keyboardLock=false, ignoreResizeUntil=0, resizeTimer=null;
+    const DEBOUNCE_MS=180, MICRO_GUARD_MS=250;
+    const now=()=>performance.now();
+
+    function debouncedResizeAll(){
+      if (suspendResize || keyboardLock || now()<ignoreResizeUntil) return;
+      clearTimeout(resizeTimer);
+      resizeTimer=setTimeout(resizeAll, DEBOUNCE_MS);
+    }
+    function sizeCanvas(c){
+      const r=c.getBoundingClientRect();
+      let w=Math.round(r.width*dpr), h=Math.round(r.height*dpr);
+      if (w<2 || h<2){ w=Math.round(innerWidth*dpr); h=Math.round(innerHeight*dpr); }
+      c.width=w; c.height=h;
+    }
+    function resizeAll(){
+      if (suspendResize || keyboardLock || now()<ignoreResizeUntil) return;
+      dpr=getDPR();
+      sizeCanvas(grid); sizeCanvas(ink);
+      drawGrid(); redraw();
+      if(typing && activeText) positionEditorUI(activeText);
+    }
+
+    if (window.visualViewport){
+      let lastVVH = window.visualViewport.height;
+      window.visualViewport.addEventListener('resize', function(){
+        const vvh=window.visualViewport.height, delta=lastVVH - vvh;
+        if (delta>60) keyboardLock=true;
+        if (vvh>=lastVVH-10){ keyboardLock=false; debouncedResizeAll(); }
+        lastVVH=vvh;
+      }, {passive:true});
+    }
+
+    if (document.fonts && document.fonts.ready){
+      document.fonts.ready.then(function(){ redraw(); }).catch(function(){});
+      if (document.fonts.addEventListener){
+        document.fonts.addEventListener('loadingdone', function(){ redraw(); });
       }
     }
-  }
+    document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible'){ debouncedResizeAll(); redraw(); } });
+    window.addEventListener('pageshow', function(){ debouncedResizeAll(); redraw(); });
+    window.addEventListener('orientationchange', function(){ debouncedResizeAll(); });
+    window.addEventListener('resize', debouncedResizeAll, {passive:true});
+    window.addEventListener('load', function(){ requestAnimationFrame(function(){ resizeAll(); requestAnimationFrame(resizeAll); }); });
 
-  /* ================= State ================= */
-  let strokes=[], texts=[], history=[];
-  let isDrawing=false, current=null;
-  let typeMode=false; // default draw
-  let typing=false, activeText=null, activeIsNew=false;
-  let composing=false;
-
-  /* ================= Autosave / Restore ================= */
-  const SAVE_KEY='pad.state.v1';
-  let saveTimer=null, dirty=false;
-  function serialize(){
-    const rs=(n)=>Math.round(n*100)/100;
-    return JSON.stringify({
-      strokes: strokes.map(s=>({
-        base:s.base, smooth:s.smooth, color:s.color,
-        points: s.points.map(p=>({x:rs(p.x),y:rs(p.y),t:rs(p.t),p:rs(p.p)}))
-      })),
-      texts: texts.map(t=>({
-        x:rs(t.x), y:rs(t.y), lines:[...t.lines], font:t.font||"", size:t.size|0
-      }))
-    });
-  }
-  function deserialize(json){
-    try{
-      const obj=JSON.parse(json);
-      if(!obj || !Array.isArray(obj.strokes) || !Array.isArray(obj.texts)) return false;
-      strokes = obj.strokes.map(s=>({
-        base:+s.base||3, smooth:+s.smooth||0.5, color:s.color||"#0c1e16",
-        points: Array.isArray(s.points)? s.points.map(p=>({x:+p.x,y:+p.y,t:+p.t,p:+p.p||.3})) : []
-      }));
-      texts = obj.texts.map(t=>({
-        x:+t.x||0, y:+t.y||0, lines:Array.isArray(t.lines)? t.lines.map(String) : [""],
-        font:String(t.font||""), size:+t.size||20
-      }));
-      history=[]; current=null; activeText=null; typing=false;
-      redraw();
-      return true;
-    }catch(_){ return false; }
-  }
-  function scheduleSave(){
-    dirty=true;
-    clearTimeout(saveTimer);
-    saveTimer=setTimeout(()=>{ if(dirty){ localStorage.setItem(SAVE_KEY, serialize()); dirty=false; } }, 600);
-  }
-  function hardSave(){ localStorage.setItem(SAVE_KEY, serialize()); dirty=false; }
-  window.addEventListener('beforeunload', hardSave);
-  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState!=='visible') hardSave(); });
-  (function tryRestore(){ const data=localStorage.getItem(SAVE_KEY); if(data) deserialize(data); })();
-
-  /* ================= Coords & pen ================= */
-  function toCanvasCoords(e){
-    const r=ink.getBoundingClientRect();
-    const x=(e.clientX-r.left)*dpr, y=(e.clientY-r.top)*dpr;
-    const p=(typeof e.pressure==="number" && e.pressure>0)? e.pressure : .3;
-    return {x,y,p,t:performance.now()};
-  }
-  function strokeWidth(i,pts,base){
-    const p=pts[i], prev=pts[i-1]||p;
-    const dx=p.x-prev.x, dy=p.y-prev.y, dt=Math.max(.1,(p.t-prev.t));
-    const v=Math.hypot(dx,dy)/dt, min=.6,max=2.2, pressure=(p.p>.05)?(.5+p.p*.9):1;
-    return base*(min+(max-min)*(1/(1+v*14)))*pressure;
-  }
-  function drawPath(pts,color,base,smooth){
-    if(pts.length<2) return;
-    ctx.save(); ctx.strokeStyle=color; ctx.beginPath();
-    const L=(a,b,t)=>a+(b-a)*t, mid=(a,b,s)=>({x:L(a.x,b.x,s),y:L(a.y,b.y,s),p:L(a.p,b.p,s),t:L(a.t,b.t,s)});
-    let p0=pts[0]; ctx.moveTo(p0.x,p0.y);
-    for(let i=1;i<pts.length;i++){
-      const p1=pts[i], m=mid(p0,p1,.5+(smooth-.5)*.6);
-      ctx.lineWidth=strokeWidth(i,pts,base*dpr);
-      ctx.quadraticCurveTo(p0.x,p0.y,m.x,m.y);
-      p0=p1;
+    if (window.ResizeObserver){
+      new ResizeObserver(function(){ debouncedResizeAll(); }).observe(document.body);
     }
-    ctx.stroke(); ctx.restore();
-  }
 
-  /* ================= Text drawing & hit test ================= */
-  function setCanvasFont(font,sizePx){
-    const DEF="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
-    const stack=(typeof font==="string" && font.trim().length)? font : DEF;
-    const px=Math.max(8, sizePx|0);
-    ctx.font=`${px*dpr}px ${stack}`;
-    ctx.textBaseline="alphabetic";
-    ctx.fillStyle="#0c1e16";
-  }
-  function drawTextObject(t){
-    if(!t || !Array.isArray(t.lines)) return;
-    if(t.lines.length===0) t.lines=[""];
-    setCanvasFont(t.font,t.size);
-    const lh=Math.round(t.size*1.35)*dpr;
-    let y=t.y;
-    for(const line of t.lines){ ctx.fillText(line,t.x,y); y+=lh; }
-  }
-  function textAtPoint(x,y){
-    for(let i=texts.length-1;i>=0;i--){
-      const t=texts[i];
+    /* ================= Grid ================= */
+    function drawGrid(){
+      const w=grid.width, h=grid.height;
+      gtx.clearRect(0,0,w,h);
+      gtx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--paper")||"#f4fff7";
+      gtx.fillRect(0,0,w,h);
+      const gap=20*dpr, r=.85*dpr;
+      gtx.fillStyle="rgba(122,166,138,.65)";
+      for(let y=gap/2;y<h;y+=gap){
+        for(let x=gap/2;x<w;x+=gap){
+          gtx.beginPath(); gtx.arc(x,y,r,0,Math.PI*2); gtx.fill();
+        }
+      }
+    }
+
+    /* ================= State ================= */
+    let strokes=[], texts=[], history=[];
+    let isDrawing=false, current=null;
+    let typeMode=false; // default draw
+    let typing=false, activeText=null, activeIsNew=false;
+    let composing=false;
+
+    /* ================= Autosave / Restore ================= */
+    const SAVE_KEY='pad.state.v1';
+    let saveTimer=null, dirty=false;
+    function serialize(){
+      const rs=function(n){return Math.round(n*100)/100;};
+      return JSON.stringify({
+        strokes: strokes.map(function(s){return{
+          base:s.base, smooth:s.smooth, color:s.color,
+          points: s.points.map(function(p){return{x:rs(p.x),y:rs(p.y),t:rs(p.t),p:rs(p.p)};})
+        };}),
+        texts: texts.map(function(t){return{
+          x:rs(t.x), y:rs(t.y), lines:[].concat(t.lines), font:t.font||"", size:t.size|0
+        };})
+      });
+    }
+    function deserialize(json){
+      try{
+        const obj=JSON.parse(json);
+        if(!obj || !Array.isArray(obj.strokes) || !Array.isArray(obj.texts)) return false;
+        strokes = obj.strokes.map(function(s){return{
+          base:+s.base||3, smooth:+s.smooth||0.5, color:s.color||"#0c1e16",
+          points: Array.isArray(s.points)? s.points.map(function(p){return{x:+p.x,y:+p.y,t:+p.t,p:+p.p||.3};}) : []
+        };});
+        texts = obj.texts.map(function(t){return{
+          x:+t.x||0, y:+t.y||0, lines:Array.isArray(t.lines)? t.lines.map(String) : [""],
+          font:String(t.font||""), size:+t.size||20
+        };});
+        history=[]; current=null; activeText=null; typing=false;
+        redraw();
+        return true;
+      }catch(_){ return false; }
+    }
+    function scheduleSave(){
+      dirty=true;
+      clearTimeout(saveTimer);
+      saveTimer=setTimeout(function(){ if(dirty){ localStorage.setItem(SAVE_KEY, serialize()); dirty=false; } }, 600);
+    }
+    function hardSave(){ try{ localStorage.setItem(SAVE_KEY, serialize()); dirty=false; }catch(_){} }
+    window.addEventListener('beforeunload', hardSave);
+    document.addEventListener('visibilitychange', function(){ if(document.visibilityState!=='visible') hardSave(); });
+    (function tryRestore(){ try{ const data=localStorage.getItem(SAVE_KEY); if(data) deserialize(data); }catch(_){} })();
+
+    /* ================= Coords & pen ================= */
+    function toCanvasCoords(e){
+      const r=ink.getBoundingClientRect();
+      const x=(e.clientX-r.left)*dpr, y=(e.clientY-r.top)*dpr;
+      const p=(typeof e.pressure==="number" && e.pressure>0)? e.pressure : .3;
+      return {x:x,y:y,p:p,t:performance.now()};
+    }
+    function strokeWidth(i,pts,base){
+      const p=pts[i], prev=pts[i-1]||p;
+      const dx=p.x-prev.x, dy=p.y-prev.y, dt=Math.max(.1,(p.t-prev.t));
+      const v=Math.hypot(dx,dy)/dt, min=.6,max=2.2, pressure=(p.p>.05)?(.5+p.p*.9):1;
+      return base*(min+(max-min)*(1/(1+v*14)))*pressure;
+    }
+    function drawPath(pts,color,base,smooth){
+      if(pts.length<2) return;
+      ctx.save(); ctx.strokeStyle=color; ctx.beginPath();
+      function L(a,b,t){return a+(b-a)*t;}
+      function mid(a,b,s){return{x:L(a.x,b.x,s),y:L(a.y,b.y,s),p:L(a.p,b.p,s),t:L(a.t,b.t,s)};}
+      let p0=pts[0]; ctx.moveTo(p0.x,p0.y);
+      for(let i=1;i<pts.length;i++){
+        const p1=pts[i], m=mid(p0,p1,.5+(smooth-.5)*.6);
+        ctx.lineWidth=strokeWidth(i,pts,base*dpr);
+        ctx.quadraticCurveTo(p0.x,p0.y,m.x,m.y);
+        p0=p1;
+      }
+      ctx.stroke(); ctx.restore();
+    }
+
+    /* ================= Text drawing & hit test ================= */
+    function setCanvasFont(font,sizePx){
+      const DEF="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
+      const stack=(typeof font==="string" && font.trim().length)? font : DEF;
+      const px=Math.max(8, sizePx|0);
+      ctx.font= String(px*dpr) + "px " + stack;
+      ctx.textBaseline="alphabetic";
+      ctx.fillStyle="#0c1e16";
+    }
+    function drawTextObject(t){
+      if(!t || !Array.isArray(t.lines)) return;
+      if(t.lines.length===0) t.lines=[""];
       setCanvasFont(t.font,t.size);
       const lh=Math.round(t.size*1.35)*dpr;
-      const w=Math.max(...t.lines.map(l=>ctx.measureText(l).width), 20*dpr);
-      const h=Math.max(lh*t.lines.length, lh);
-      const L=t.x-4*dpr, T=t.y-(t.size*1.05*dpr);
-      if(x>=L && x<=L+w+8*dpr && y>=T && y<=T+h+6*dpr) return {t,i};
+      let y=t.y;
+      for(var i=0;i<t.lines.length;i++){ ctx.fillText(t.lines[i],t.x,y); y+=lh; }
     }
-    return null;
-  }
+    function textAtPoint(x,y){
+      for(let i=texts.length-1;i>=0;i--){
+        const t=texts[i];
+        setCanvasFont(t.font,t.size);
+        const lh=Math.round(t.size*1.35)*dpr;
+        const widths = t.lines.map(function(l){return ctx.measureText(l).width;});
+        const w=Math.max.apply(null, widths.concat([20*dpr]));
+        const h=Math.max(lh*t.lines.length, lh);
+        const L=t.x-4*dpr, T=t.y-(t.size*1.05)*dpr;
+        if(x>=L && x<=L+w+8*dpr && y>=T && y<=T+h+6*dpr) return {t:t,i:i};
+      }
+      return null;
+    }
 
-  /* ================= Inline editor + toolbar ================= */
-  function editorRectCSSFor(t){
-    const r=ink.getBoundingClientRect();
-    const cssX = r.left + (t.x / dpr);
-    const cssY = r.top  + (t.y / dpr) - (t.size * 1.05);
-    const lineH = Math.round(t.size*1.35);
-    const fontStack = (t.font && t.font.trim().length) ? t.font : "system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
-    return {cssX, cssY, lineH, fontStack};
-  }
-  function setEditorStyleFor(t){
-    const {cssX, cssY, lineH, fontStack} = editorRectCSSFor(t);
-    const ed = ui.inlineEditor;
-    ed.style.left = cssX + "px";
-    ed.style.top  = cssY + "px";
-    ed.style.fontFamily = fontStack;
-    ed.style.fontSize   = t.size + "px";
-    ed.style.lineHeight = lineH + "px";
-  }
-  function positionEditbar(){
-    const ed = ui.inlineEditor, eb = ui.editbar;
-    const rect = ed.getBoundingClientRect();
-    const pad = 6;
-    eb.style.left = Math.min(window.innerWidth - 10, rect.right - eb.offsetWidth + pad) + "px";
-    eb.style.top  = Math.max(8, rect.top - eb.offsetHeight - 6) + "px";
-  }
-  function positionEditorUI(t){
-    setEditorStyleFor(t);
-    requestAnimationFrame(positionEditbar);
-  }
+    /* ================= Inline editor + toolbar ================= */
+    function editorRectCSSFor(t){
+      const r=ink.getBoundingClientRect();
+      const cssX = r.left + (t.x / dpr);
+      const cssY = r.top  + (t.y / dpr) - (t.size * 1.05);
+      const lineH = Math.round(t.size*1.35);
+      const fontStack = (t.font && t.font.trim().length) ? t.font : "system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
+      return {cssX:cssX, cssY:cssY, lineH:lineH, fontStack:fontStack};
+    }
+    function setEditorStyleFor(t){
+      const R = editorRectCSSFor(t);
+      const ed = ui.inlineEditor;
+      ed.style.left = R.cssX + "px";
+      ed.style.top  = R.cssY + "px";
+      ed.style.fontFamily = R.fontStack;
+      ed.style.fontSize   = t.size + "px";
+      ed.style.lineHeight = R.lineH + "px";
+    }
+    function positionEditbar(){
+      const ed = ui.inlineEditor, eb = ui.editbar;
+      const rect = ed.getBoundingClientRect();
+      const pad = 6;
+      const left = Math.min(window.innerWidth - 10, rect.right - eb.offsetWidth + pad);
+      const top  = Math.max(8, rect.top - eb.offsetHeight - 6);
+      eb.style.left = left + "px";
+      eb.style.top  = top + "px";
+    }
+    function positionEditorUI(t){
+      setEditorStyleFor(t);
+      requestAnimationFrame(positionEditbar);
+    }
+    function showEditorFor(t, isNew){
+      activeIsNew = !!isNew;
+      setEditorStyleFor(t);
+      const ed = ui.inlineEditor, eb = ui.editbar;
+      ed.textContent = t.lines.join("\n");
+      ed.style.display = "block";
+      ed.style.pointerEvents = "auto";
+      eb.style.display = "flex";
+      ui.ebCancel.style.display = activeIsNew ? "inline-block" : "none";
+      requestAnimationFrame(function(){
+        try{ ed.focus(); }catch(_){}
+        positionEditbar();
+      });
+    }
+    function hideEditor(){
+      const ed = ui.inlineEditor, eb = ui.editbar;
+      ed.style.display = "none";
+      ed.style.pointerEvents = "none";
+      try{ ed.blur(); }catch(_){}
+      ed.textContent = "";
+      eb.style.display = "none";
+      activeIsNew = false;
+    }
+    function toast(msg){
+      const t = ui.toast; t.textContent = msg||"Saved"; t.classList.add("show");
+      clearTimeout(t._timer); t._timer = setTimeout(function(){ t.classList.remove("show"); }, 900);
+    }
+    function getEditorLines(){
+      return ui.inlineEditor.textContent.replace(/\r/g,'').split("\n");
+    }
+    function commitEditorToActive(opts){
+      opts = opts || {};
+      var showToast = (opts.showToast!==false);
+      if(!activeText) return;
+      const lines = getEditorLines();
+      const contentLen = lines.join("").trim().length;
+      if (contentLen===0){
+        const idx = texts.indexOf(activeText);
+        if (idx>-1) texts.splice(idx,1);
+        history.push({type:"text"});
+        redraw(); scheduleSave();
+        if(showToast) toast("Deleted");
+        return;
+      }
+      activeText.lines = lines;
+      redraw(); scheduleSave();
+      if(showToast) toast("Saved");
+    }
 
-  function showEditorFor(t, isNew){
-    activeIsNew = !!isNew;
-    setEditorStyleFor(t);
-    const ed = ui.inlineEditor, eb = ui.editbar;
-    ed.textContent = t.lines.join("\n");
-    ed.style.display = "block";
-    ed.style.pointerEvents = "auto";
-    eb.style.display = "flex";
-    // Cancel only for brand-new blocks
-    ui.ebCancel.style.display = activeIsNew ? "inline-block" : "none";
-    requestAnimationFrame(()=>{
-      ed.focus(); placeCaretAtEnd(ed);
-      positionEditbar();
+    ui.inlineEditor.addEventListener('compositionstart', function(){ composing=true; });
+    ui.inlineEditor.addEventListener('compositionend', function(){ composing=false; commitEditorToActive(); });
+    ui.inlineEditor.addEventListener('input', function(){ if(!composing){ commitEditorToActive({showToast:false}); } });
+    ui.inlineEditor.addEventListener('blur', function(){
+      if(composing){
+        setTimeout(function(){ commitEditorToActive(); }, 200);
+      }else{
+        commitEditorToActive();
+      }
+      hideEditor();
+      typing=false;
     });
-  }
-  function hideEditor(){
-    const ed = ui.inlineEditor, eb = ui.editbar;
-    ed.style.display = "none";
-    ed.style.pointerEvents = "none";
-    ed.blur();
-    ed.textContent = "";
-    eb.style.display = "none";
-    activeIsNew = false;
-  }
-  function placeCaretAtEnd(el){
-    try{
-      const sel = window.getSelection();
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      range.collapse(false);
-      sel.removeAllRanges(); sel.addRange(range);
-    }catch(_){}
-  }
-  function toast(msg="Saved"){
-    const t = ui.toast; t.textContent = msg; t.classList.add("show");
-    clearTimeout(t._timer); t._timer = setTimeout(()=> t.classList.remove("show"), 900);
-  }
 
-  function getEditorLines(){
-    return ui.inlineEditor.textContent.replace(/\r/g,'').split("\n");
-  }
-
-  function commitEditorToActive({showToast=true}={}){
-    if(!activeText) return;
-    const lines = getEditorLines();
-    // Normalize trailing empty lines
-    const normalized = lines;
-    const contentLen = normalized.join("").trim().length;
-
-    if (contentLen===0){
-      // If brand-new and empty -> remove; if existing and empty -> delete entry
-      const idx = texts.indexOf(activeText);
-      if (idx>-1) texts.splice(idx,1);
-      history.push({type:"text"}); // record for undo symmetry
-      redraw(); scheduleSave();
-      if(showToast) toast("Deleted");
-      return;
-    }
-    activeText.lines = normalized;
-    redraw(); scheduleSave();
-    if(showToast) toast("Saved");
-  }
-
-  /* Composition-safe handlers */
-  ui.inlineEditor.addEventListener('compositionstart', ()=>{ composing=true; });
-  ui.inlineEditor.addEventListener('compositionend', ()=>{ composing=false; commitEditorToActive(); });
-
-  ui.inlineEditor.addEventListener('input', ()=>{ if(!composing){ commitEditorToActive({showToast:false}); } });
-  ui.inlineEditor.addEventListener('blur', ()=>{
-    // Always commit on blur; if composing, delay a tick
-    if(composing){
-      setTimeout(()=> commitEditorToActive(), 200);
-    }else{
+    ui.ebDone.addEventListener('click', function(){
       commitEditorToActive();
-    }
-    // Keep type mode; just hide editor chrome so it feels saved
-    hideEditor();
-    typing=false; // not actively editing, but remain in typeMode for new placement
-  });
-
-  ui.ebDone.addEventListener('click', ()=>{
-    commitEditorToActive();
-    hideEditor();
-    typing=false;
-  });
-  ui.ebCancel.addEventListener('click', ()=>{
-    if(activeIsNew && activeText){
-      const idx = texts.indexOf(activeText);
-      if (idx>-1) texts.splice(idx,1);
-      redraw(); scheduleSave();
-    }
-    hideEditor();
-    typing=false; activeText=null; activeIsNew=false;
-  });
-
-  /* ================= Typing interactions (tap to place/edit) ================= */
-  function startTypingAt(e){
-    const {x,y}=toCanvasCoords(e);
-    const hit=textAtPoint(x,y);
-    if (document.activeElement && document.activeElement !== ui.inlineEditor) {
-      document.activeElement.blur?.();
-    }
-    if(hit){
-      activeText = hit.t; typing=true; showEditorFor(activeText, /*isNew*/ false);
-    }else{
-      const t={ x, y, lines:[""], font:(ui.fontSel.value||ui.fontSel2.value||""), size:parseInt(ui.fontSize.value||ui.fontSize2.value,10)||20 };
-      texts.push(t); history.push({type:"text"}); scheduleSave();
-      activeText=t; typing=true; showEditorFor(activeText, /*isNew*/ true);
-    }
-    redraw();
-  }
-
-  /* ================= Redraw (skip live-edited) ================= */
-  function redraw(){
-    ctx.clearRect(0,0,ink.width,ink.height);
-    for(const s of strokes) drawPath(s.points,s.color,s.base,s.smooth);
-    if(current) drawPath(current.points,current.color,current.base,current.smooth);
-    for(const t of texts){
-      if(typing && activeText && t===activeText && ui.inlineEditor.style.display==='block') continue;
-      drawTextObject(t);
-    }
-  }
-
-  /* ================= Mode toggle (segmented) ================= */
-  function updateSegUI(){
-    if(typeMode){
-      ui.segType.classList.add('active'); ui.segType.setAttribute('aria-selected','true');
-      ui.segDraw.classList.remove('active'); ui.segDraw.setAttribute('aria-selected','false');
-    }else{
-      ui.segDraw.classList.add('active'); ui.segDraw.setAttribute('aria-selected','true');
-      ui.segType.classList.remove('active'); ui.segType.setAttribute('aria-selected','false');
-    }
-  }
-  function setTypeMode(on){
-    ignoreResizeUntil = now() + MICRO_GUARD_MS;
-    typeMode=on; updateSegUI();
-    if (document.activeElement && document.activeElement !== ui.inlineEditor) {
-      document.activeElement.blur?.();
-    }
-    suspendResize=on;
-    if(!on){
-      // Leaving Type: commit/hide editor fully
-      if(activeText){ commitEditorToActive(); }
+      hideEditor(); typing=false;
+    });
+    ui.ebCancel.addEventListener('click', function(){
+      if(activeIsNew && activeText){
+        const idx = texts.indexOf(activeText);
+        if (idx>-1) texts.splice(idx,1);
+        redraw(); scheduleSave();
+      }
       hideEditor(); typing=false; activeText=null; activeIsNew=false;
-      redraw(); debouncedResizeAll();
-    }
-  }
-  ui.segDraw.addEventListener('click', ()=> setTypeMode(false));
-  ui.segType.addEventListener('click', ()=> setTypeMode(true));
+    });
 
-  /* ================= DRAW interactions (non-passive + preventDefault) ================= */
-  function startStroke(e){
-    e.preventDefault();
-    // Safety: if editor is visible, commit & hide before drawing
-    if (ui.inlineEditor.style.display==='block'){
-      if(activeText){ commitEditorToActive(); }
+    /* ================= Typing interactions ================= */
+    function startTypingAt(e){
+      const pt=toCanvasCoords(e);
+      const hit=textAtPoint(pt.x,pt.y);
+      if (document.activeElement && document.activeElement !== ui.inlineEditor) {
+        try{ document.activeElement.blur(); }catch(_){}
+      }
+      if(hit){
+        activeText = hit.t; typing=true; showEditorFor(activeText, false);
+      }else{
+        const t={ x:pt.x, y:pt.y, lines:[""], font:(ui.fontSel.value||ui.fontSel2.value||""), size:parseInt(ui.fontSize.value||ui.fontSize2.value,10)||20 };
+        texts.push(t); history.push({type:"text"}); scheduleSave();
+        activeText=t; typing=true; showEditorFor(activeText, true);
+      }
+      redraw();
+    }
+
+    /* ================= Redraw ================= */
+    function redraw(){
+      ctx.clearRect(0,0,ink.width,ink.height);
+      for(var i=0;i<strokes.length;i++){ var s=strokes[i]; drawPath(s.points,s.color,s.base,s.smooth); }
+      if(current) drawPath(current.points,current.color,current.base,current.smooth);
+      for(var j=0;j<texts.length;j++){
+        var t=texts[j];
+        if(typing && activeText && t===activeText && ui.inlineEditor.style.display==='block') continue;
+        drawTextObject(t);
+      }
+    }
+
+    /* ================= Mode toggle ================= */
+    function updateSegUI(){
+      if(typeMode){
+        ui.segType.classList.add('active'); ui.segType.setAttribute('aria-selected','true');
+        ui.segDraw.classList.remove('active'); ui.segDraw.setAttribute('aria-selected','false');
+      }else{
+        ui.segDraw.classList.add('active'); ui.segDraw.setAttribute('aria-selected','true');
+        ui.segType.classList.remove('active'); ui.segType.setAttribute('aria-selected','false');
+      }
+    }
+    function setTypeMode(on){
+      ignoreResizeUntil = now() + MICRO_GUARD_MS;
+      typeMode=!!on; updateSegUI();
+      if (document.activeElement && document.activeElement !== ui.inlineEditor) {
+        try{ document.activeElement.blur(); }catch(_){}
+      }
+      suspendResize=!!on;
+      if(!on){
+        if(activeText){ commitEditorToActive(); }
+        hideEditor(); typing=false; activeText=null; activeIsNew=false;
+        redraw(); debouncedResizeAll();
+      }
+    }
+    ui.segDraw.addEventListener('click', function(){ setTypeMode(false); });
+    ui.segType.addEventListener('click', function(){ setTypeMode(true); });
+
+    /* ================= Drawing (non-passive) ================= */
+    function startStroke(e){
+      e.preventDefault();
+      if (ui.inlineEditor.style.display==='block'){
+        if(activeText){ commitEditorToActive(); }
+        hideEditor(); typing=false; activeText=null; activeIsNew=false;
+      }
+      isDrawing=true;
+      current={points:[],color:"#0c1e16",base:parseFloat(ui.thick.value||ui.thick2.value),smooth:parseFloat(ui.smooth.value||ui.smooth2.value)};
+      current.points.push(toCanvasCoords(e));
+    }
+    function extendStroke(e){
+      if(!isDrawing||!current) return;
+      e.preventDefault();
+      current.points.push(toCanvasCoords(e)); redraw();
+    }
+    function endStroke(e){
+      if(!isDrawing||!current) return;
+      if(e) e.preventDefault();
+      strokes.push(current); history.push({type:"stroke"}); current=null; isDrawing=false; redraw(); scheduleSave();
+    }
+
+    /* ================= Buttons ================= */
+    function doUndo(){
+      const last=history.pop();
+      if(last){ if(last.type==="stroke") strokes.pop(); else if(last.type==="text") texts.pop(); redraw(); scheduleSave(); }
+    }
+    ui.undoBtn.addEventListener("click", doUndo);
+
+    function newPage(){
+      if(ui.inlineEditor.style.display==='block' && activeText){ commitEditorToActive(); }
+      strokes=[]; texts=[]; history=[]; current=null;
       hideEditor(); typing=false; activeText=null; activeIsNew=false;
+      redraw(); flashPerforation(); scheduleSave();
     }
-    isDrawing=true;
-    current={points:[],color:"#0c1e16",base:parseFloat(ui.thick.value||ui.thick2.value),smooth:parseFloat(ui.smooth.value||ui.smooth2.value)};
-    current.points.push(toCanvasCoords(e));
+    if(ui.clear) ui.clear.addEventListener("click", newPage);
+    if(ui.clear2) ui.clear2.addEventListener("click", function(){ newPage(); closePopover(); });
+
+    function syncFont(from, to){ if(to) to.value = from.value; if(activeText){ activeText.font = (from.value||""); positionEditorUI(activeText); redraw(); scheduleSave(); } }
+    function syncSize(from, to){ if(to) to.value = from.value; if(activeText){ activeText.size = Math.max(8, parseInt(from.value,10)||20); positionEditorUI(activeText); redraw(); scheduleSave(); } }
+    function syncRange(from, to, key){ if(to) to.value = from.value; if(current) current[key] = parseFloat(from.value); }
+
+    ui.fontSel.addEventListener("change", function(){ syncFont(ui.fontSel, ui.fontSel2); });
+    ui.fontSel2.addEventListener("change", function(){ syncFont(ui.fontSel2, ui.fontSel); closePopover(); });
+
+    ui.fontSize.addEventListener("input", function(){ syncSize(ui.fontSize, ui.fontSize2); });
+    ui.fontSize2.addEventListener("input", function(){ syncSize(ui.fontSize2, ui.fontSize); });
+
+    ui.thick.addEventListener("input", function(){ syncRange(ui.thick, ui.thick2, 'base'); });
+    ui.thick2.addEventListener("input", function(){ syncRange(ui.thick2, ui.thick, 'base'); });
+
+    ui.smooth.addEventListener("input", function(){ syncRange(ui.smooth, ui.smooth2, 'smooth'); });
+    ui.smooth2.addEventListener("input", function(){ syncRange(ui.smooth2, ui.smooth, 'smooth'); });
+
+    /* ================= Toolbar: collapse / popover ================= */
+    function setCollapsed(v){
+      toolbar.classList.toggle('collapsed', v);
+      ui.controlsRow.style.display = v ? 'none' : 'flex';
+      ui.moreBtn.style.display = v ? 'inline-flex' : 'none';
+      ui.collapseBtn.setAttribute('aria-expanded', (!v).toString());
+      try{ localStorage.setItem('pad.collapsed', v ? '1' : '0'); }catch(_){}
+      closePopover();
+    }
+    function closePopover(){
+      ui.popover.classList.remove('open');
+      ui.moreBtn.setAttribute('aria-expanded','false');
+    }
+    ui.moreBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      const open = !ui.popover.classList.contains('open');
+      if(open){
+        ui.popover.classList.add('open'); ui.moreBtn.setAttribute('aria-expanded','true');
+        ui.popover.style.right = '8px';
+      }else{ closePopover(); }
+    });
+    document.addEventListener('click', function(e){
+      if (!ui.popover.contains(e.target) && e.target !== ui.moreBtn) closePopover();
+    });
+    ui.collapseBtn.addEventListener('click', function(){
+      ignoreResizeUntil = now() + MICRO_GUARD_MS;
+      const collapsed = toolbar.classList.contains('collapsed');
+      setCollapsed(!collapsed);
+    });
+    (function initCollapsed(){
+      let saved=null; try{ saved = localStorage.getItem('pad.collapsed'); }catch(_){}
+      const preferCollapsed = saved != null ? saved === '1'
+        : (window.matchMedia && matchMedia('(pointer:coarse) and (min-width:768px)').matches);
+      setCollapsed(preferCollapsed);
+    })();
+
+    /* ================= Pointer routing (non-passive) ================= */
+    ink.addEventListener("pointerdown", function(e){
+      ink.setPointerCapture(e.pointerId);
+      if (typeMode){ startTypingAt(e); return; }
+      startStroke(e);
+    }, {passive:false});
+    ink.addEventListener("pointermove", function(e){ if(typeMode) return; extendStroke(e); }, {passive:false});
+    ink.addEventListener("pointerup",   function(e){ if(typeMode) return; ink.releasePointerCapture(e.pointerId); endStroke(e); }, {passive:false});
+    ink.addEventListener("pointercancel", function(e){ if(typeMode) return; endStroke(e); }, {passive:false});
+
+    /* ================= Keyboard ================= */
+    window.addEventListener("keydown",function(e){
+      if(e.key==="Escape" && typeMode){ setTypeMode(false); }
+    });
+
+    /* ================= Perforation flash & Tear Off ================= */
+    function flashPerforation(){
+      const el = $("pageAnim");
+      el.classList.remove("tearing"); void el.offsetWidth; el.classList.add("tearing");
+      setTimeout(function(){ el.classList.remove("tearing"); }, 800);
+    }
+    ui.tear.addEventListener("click",function(){
+      if(ui.inlineEditor.style.display==='block' && activeText){ commitEditorToActive(); hideEditor(); typing=false; }
+      const off=document.createElement("canvas");
+      off.width=grid.width; off.height=grid.height;
+      const otx=off.getContext("2d");
+      otx.drawImage(grid,0,0); otx.drawImage(ink,0,0);
+      const ts=new Date(), pad=function(n){return String(n).padStart(2,"0");};
+      const name="scribble_"+ts.getFullYear()+"-"+pad(ts.getMonth()+1)+"-"+pad(ts.getDate())+"_"+pad(ts.getHours())+pad(ts.getMinutes())+pad(ts.getSeconds())+".png";
+      off.toBlob(function(blob){
+        const a=document.createElement("a");
+        a.download=name; a.href=URL.createObjectURL(blob);
+        document.body.appendChild(a); a.click();
+        URL.revokeObjectURL(a.href); a.remove();
+      },"image/png");
+      flashPerforation();
+      setTimeout(function(){ strokes=[]; texts=[]; history=[]; current=null; activeText=null; typing=false; redraw(); scheduleSave(); }, 380);
+    });
+
+    /* ================= Init ================= */
+    function initialControlSync(){
+      if(ui.fontSel2) ui.fontSel2.value = ui.fontSel.value;
+      if(ui.fontSize2) ui.fontSize2.value = ui.fontSize.value;
+      if(ui.thick2) ui.thick2.value = ui.thick.value;
+      if(ui.smooth2) ui.smooth2.value = ui.smooth.value;
+    }
+    initialControlSync();
+    updateSegUI();
+    resizeAll();
+    setOK(true); // ready
+  }catch(err){
+    reportError(err);
   }
-  function extendStroke(e){
-    if(!isDrawing||!current) return;
-    e.preventDefault();
-    current.points.push(toCanvasCoords(e)); redraw();
-  }
-  function endStroke(e){
-    if(!isDrawing||!current) return;
-    e && e.preventDefault();
-    strokes.push(current); history.push({type:"stroke"}); current=null; isDrawing=false; redraw(); scheduleSave();
-  }
 
-  /* ================= Buttons ================= */
-  function doUndo(){
-    const last=history.pop();
-    if(last){ if(last.type==="stroke") strokes.pop(); else if(last.type==="text") texts.pop(); redraw(); scheduleSave(); }
-  }
-  ui.undoBtn.addEventListener("click", doUndo);
-
-  function newPage(){
-    // Commit any active text first
-    if(ui.inlineEditor.style.display==='block' && activeText){ commitEditorToActive(); }
-    strokes=[]; texts=[]; history=[]; current=null;
-    hideEditor(); typing=false; activeText=null; activeIsNew=false;
-    redraw(); flashPerforation(); scheduleSave();
-  }
-  ui.clear?.addEventListener("click", newPage);
-  ui.clear2?.addEventListener("click", ()=>{ newPage(); closePopover(); });
-
-  // Sync duplicate controls
-  function syncFont(from, to){ to.value = from.value; if(activeText){ activeText.font = to.value || ""; positionEditorUI(activeText); redraw(); scheduleSave(); } }
-  function syncSize(from, to){ to.value = from.value; if(activeText){ activeText.size = Math.max(8, parseInt(to.value,10)||20); positionEditorUI(activeText); redraw(); scheduleSave(); } }
-  function syncRange(from, to, key){ to.value = from.value; if(current) current[key] = parseFloat(to.value); }
-
-  ui.fontSel.addEventListener("change", ()=> syncFont(ui.fontSel, ui.fontSel2));
-  ui.fontSel2.addEventListener("change", ()=>{ syncFont(ui.fontSel2, ui.fontSel); closePopover(); });
-
-  ui.fontSize.addEventListener("input", ()=> syncSize(ui.fontSize, ui.fontSize2));
-  ui.fontSize2.addEventListener("input", ()=>{ syncSize(ui.fontSize2, ui.fontSize); });
-
-  ui.thick.addEventListener("input", ()=> syncRange(ui.thick, ui.thick2, 'base'));
-  ui.thick2.addEventListener("input", ()=>{ syncRange(ui.thick2, ui.thick, 'base'); });
-
-  ui.smooth.addEventListener("input", ()=> syncRange(ui.smooth, ui.smooth2, 'smooth'));
-  ui.smooth2.addEventListener("input", ()=>{ syncRange(ui.smooth2, ui.smooth, 'smooth'); });
-
-  /* ================= Toolbar: collapse / popover ================= */
-  function setCollapsed(v){
-    toolbar.classList.toggle('collapsed', v);
-    ui.controlsRow.style.display = v ? 'none' : 'flex';
-    ui.moreBtn.style.display = v ? 'inline-flex' : 'none';
-    ui.collapseBtn.setAttribute('aria-expanded', (!v).toString());
-    localStorage.setItem('pad.collapsed', v ? '1' : '0');
-    closePopover();
-  }
-  function closePopover(){
-    ui.popover.classList.remove('open');
-    ui.moreBtn.setAttribute('aria-expanded','false');
-  }
-  ui.moreBtn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    const open = !ui.popover.classList.contains('open');
-    if(open){
-      ui.popover.classList.add('open'); ui.moreBtn.setAttribute('aria-expanded','true');
-      ui.popover.style.right = '8px';
-    }else{ closePopover(); }
+  // Tap the status dot to see last error (if any)
+  $("status").addEventListener('click', function(){
+    alert(this.title || "All good!");
   });
-  document.addEventListener('click', (e)=>{
-    if (!ui.popover.contains(e.target) && e.target !== ui.moreBtn) closePopover();
-  });
-  ui.collapseBtn.addEventListener('click', ()=>{
-    ignoreResizeUntil = now() + MICRO_GUARD_MS;
-    const collapsed = toolbar.classList.contains('collapsed');
-    setCollapsed(!collapsed);
-  });
-  (function initCollapsed(){
-    const saved = localStorage.getItem('pad.collapsed');
-    const preferCollapsed = saved != null ? saved === '1'
-      : (matchMedia('(pointer:coarse) and (min-width:768px)').matches);
-    setCollapsed(preferCollapsed);
-  })();
-
-  /* ================= Pointer routing (non-passive) ================= */
-  ink.addEventListener("pointerdown", e=>{
-    ink.setPointerCapture(e.pointerId);
-    if (typeMode){ startTypingAt(e); return; }
-    startStroke(e);
-  }, {passive:false});
-  ink.addEventListener("pointermove", e=>{ if(typeMode) return; extendStroke(e); }, {passive:false});
-  ink.addEventListener("pointerup",   e=>{ if(typeMode) return; ink.releasePointerCapture(e.pointerId); endStroke(e); }, {passive:false});
-  ink.addEventListener("pointercancel", e=>{ if(typeMode) return; endStroke(e); }, {passive:false});
-
-  /* ================= Keyboard ================= */
-  window.addEventListener("keydown",e=>{
-    if(e.key==="Escape" && typeMode){ setTypeMode(false); }
-  });
-
-  /* ================= Perforation flash & Tear Off ================= */
-  function flashPerforation(){
-    const el = $("#pageAnim");
-    el.classList.remove("tearing"); void el.offsetWidth; el.classList.add("tearing");
-    setTimeout(()=> el.classList.remove("tearing"), 800);
-  }
-  ui.tear.addEventListener("click",()=>{
-    if(ui.inlineEditor.style.display==='block' && activeText){ commitEditorToActive(); hideEditor(); typing=false; }
-    const off=document.createElement("canvas");
-    off.width=grid.width; off.height=grid.height;
-    const otx=off.getContext("2d");
-    otx.drawImage(grid,0,0); otx.drawImage(ink,0,0);
-    const ts=new Date(), pad=n=>String(n).padStart(2,"0");
-    const name=`scribble_${ts.getFullYear()}-${pad(ts.getMonth()+1)}-${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.png`;
-    off.toBlob(blob=>{
-      const a=document.createElement("a");
-      a.download=name; a.href=URL.createObjectURL(blob);
-      document.body.appendChild(a); a.click();
-      URL.revokeObjectURL(a.href); a.remove();
-    },"image/png");
-    flashPerforation();
-    setTimeout(()=>{ strokes=[]; texts=[]; history=[]; current=null; activeText=null; typing=false; redraw(); scheduleSave(); }, 380);
-  });
-
-  /* ================= Init ================= */
-  function initialControlSync(){
-    ui.fontSel2.value = ui.fontSel.value;
-    ui.fontSize2.value = ui.fontSize.value;
-    ui.thick2.value = ui.thick.value;
-    ui.smooth2.value = ui.smooth.value;
-  }
-  initialControlSync();
-  updateSegUI();       // pill reflects default Draw
-  resizeAll();         // layout & grid
 })();
 </script>
 </body>
