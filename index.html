@@ -150,6 +150,18 @@
   .status{position:fixed;left:8px;bottom:8px;width:10px;height:10px;border-radius:50%;background:#bbb;z-index:4}
   .status.ok{background:#24c768}
 
+  /* Inline editor (contenteditable) */
+  #inlineEditor{
+    position:absolute; z-index:3; /* above canvas, under toolbar */
+    min-width:1px; background:transparent; color:#0c1e16;
+    outline:0; border:0; padding:0; margin:0;
+    white-space:pre-wrap; word-break:break-word;
+    -webkit-user-select:text; user-select:text;
+    caret-color:#0c1e16;
+    /* font and line-height are set dynamically */
+    display:none;
+  }
+
   /* Tablet compression */
   @media (min-width:768px) and (pointer:coarse){
     .toolbar{gap:10px}
@@ -241,6 +253,9 @@
   <canvas id="grid"></canvas>
   <canvas id="ink"></canvas>
   <div class="badge">Dotted engineering paper • ink + typed text</div>
+
+  <!-- Floating inline editor -->
+  <div id="inlineEditor" contenteditable="true" spellcheck="true"></div>
 </div>
 <div id="status" class="status"></div>
 
@@ -271,7 +286,8 @@
     moreBtn:document.getElementById("moreBtn"),
     popover:document.getElementById("popover"),
     collapseBtn:document.getElementById("collapseBtn"),
-    controlsRow:document.getElementById("controlsRow")
+    controlsRow:document.getElementById("controlsRow"),
+    inlineEditor:document.getElementById("inlineEditor")
   };
 
   function getDPR(){ return Math.max(1, window.devicePixelRatio || 1); }
@@ -349,7 +365,6 @@
   const SAVE_KEY='pad.state.v1';
   let saveTimer=null, dirty=false;
   function serialize(){
-    // Keep it light: round floats a bit
     const rs=(n)=>Math.round(n*100)/100;
     return JSON.stringify({
       strokes: strokes.map(s=>({
@@ -384,16 +399,9 @@
     saveTimer=setTimeout(()=>{ if(dirty){ localStorage.setItem(SAVE_KEY, serialize()); dirty=false; } }, 600);
   }
   function hardSave(){ localStorage.setItem(SAVE_KEY, serialize()); dirty=false; }
-
-  // Save on important events
   window.addEventListener('beforeunload', hardSave);
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState!=='visible') hardSave(); });
-
-  // Attempt restore on load (only if something exists)
-  (function tryRestore(){
-    const data=localStorage.getItem(SAVE_KEY);
-    if(data) deserialize(data); // silent restore
-  })();
+  (function tryRestore(){ const data=localStorage.getItem(SAVE_KEY); if(data) deserialize(data); })();
 
   /* ================= Coords & pen ================= */
   function toCanvasCoords(e){
@@ -422,7 +430,7 @@
     ctx.stroke(); ctx.restore();
   }
 
-  /* ================= Text ================= */
+  /* ================= Text drawing ================= */
   function setCanvasFont(font,sizePx){
     const DEF="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
     const stack=(typeof font==="string" && font.trim().length)? font : DEF;
@@ -439,22 +447,8 @@
     let y=t.y;
     for(const line of t.lines){ ctx.fillText(line,t.x,y); y+=lh; }
   }
-  function drawCaretFor(t){
-    if(!typing || !caretVisible || t!==activeText) return;
-    setCanvasFont(t.font,t.size);
-    const lh=Math.round(t.size*1.35)*dpr;
-    const last=t.lines[t.lines.length-1]||"";
-    const x=t.x+ctx.measureText(last).width+2*dpr;
-    const yb=t.y+(t.lines.length-1)*lh;
-    ctx.save();
-    ctx.strokeStyle="rgba(12,30,22,.9)";
-    ctx.lineWidth=1.5*dpr;
-    ctx.beginPath();
-    ctx.moveTo(x, yb-(t.size*1.05*dpr));
-    ctx.lineTo(x, yb+(t.size*.25*dpr));
-    ctx.stroke();
-    ctx.restore();
-  }
+
+  /* ================= Hit test for text ================= */
   function textAtPoint(x,y){
     for(let i=texts.length-1;i>=0;i--){
       const t=texts[i];
@@ -468,72 +462,193 @@
     return null;
   }
 
-  /* ================= Typing interactions ================= */
+  /* ================= Inline editor (contenteditable) ================= */
+  function setEditorStyleFor(t){
+    const r=ink.getBoundingClientRect();
+    const cssX = r.left + (t.x / dpr);
+    const cssY = r.top  + (t.y / dpr) - (t.size * 1.05); // approximate ascent above baseline
+    const lineH = Math.round(t.size*1.35);
+    const fontStack = (t.font && t.font.trim().length) ? t.font : "system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
+
+    const ed = ui.inlineEditor;
+    ed.style.left = cssX + "px";
+    ed.style.top  = cssY + "px";
+    ed.style.fontFamily = fontStack;
+    ed.style.fontSize   = t.size + "px";
+    ed.style.lineHeight = lineH + "px";
+  }
+  function showEditorFor(t){
+    setEditorStyleFor(t);
+    const ed = ui.inlineEditor;
+    ed.textContent = t.lines.join("\n");
+    ed.style.display = "block";
+    // Focus in next frame (more reliable on iOS)
+    requestAnimationFrame(()=>{ ed.focus(); placeCaretAtEnd(ed); });
+  }
+  function hideEditor(){
+    const ed = ui.inlineEditor;
+    ed.style.display = "none";
+    ed.blur();
+    ed.textContent = "";
+  }
+  function placeCaretAtEnd(el){
+    try{
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }catch(_){}
+  }
+  function updateActiveTextFromEditor(){
+    if(!activeText) return;
+    const ed = ui.inlineEditor;
+    // Split on \n, normalize CR
+    const lines = ed.textContent.replace(/\r/g,'').split("\n");
+    activeText.lines = lines;
+    redraw();
+    scheduleSave();
+  }
+
+  /* ================= Typing interactions (with inline editor) ================= */
   function startTypingAt(e){
+    // entering type mode requires an explicit tap; place or edit text
     const {x,y}=toCanvasCoords(e);
     const hit=textAtPoint(x,y);
+    // If toolbar inputs are focused, blur them so keyboard focus is owned by the editor
+    if (document.activeElement && document.activeElement !== ui.inlineEditor) {
+      document.activeElement.blur?.();
+    }
+
     if(hit){
-      activeText=hit.t; typing=true;
-      dragInfo={text:hit.t, dx:x-hit.t.x, dy:y-hit.t.y, dragging:false};
+      activeText = hit.t; typing=true;
+      showEditorFor(activeText);
     }else{
-      const t={ x,y, lines:[""], font:(ui.fontSel.value||ui.fontSel2.value||""), size:parseInt(ui.fontSize.value||ui.fontSize2.value,10)||20 };
+      const t={
+        x, y,
+        lines:[""],
+        font:(ui.fontSel.value||ui.fontSel2.value||""),
+        size:parseInt(ui.fontSize.value||ui.fontSize2.value,10)||20
+      };
       texts.push(t); history.push({type:"text"}); scheduleSave();
       activeText=t; typing=true;
-      dragInfo={text:t, dx:0, dy:0, dragging:false};
+      showEditorFor(activeText);
     }
-    startCaretBlink(); redraw();
+    redraw(); // redraw without activeText (editor will render it visually)
   }
-  function onPointerMoveType(e){
-    if(!dragInfo) return;
-    const {x,y}=toCanvasCoords(e);
-    if(!dragInfo.dragging){
-      const mdx=Math.abs(x-(dragInfo.text.x+dragInfo.dx));
-      const mdy=Math.abs(y-(dragInfo.text.y+dragInfo.dy));
-      if(mdx>2*dpr || mdy>2*dpr) dragInfo.dragging=true;
-    }
-    if(dragInfo.dragging){
-      dragInfo.text.x=x-dragInfo.dx;
-      dragInfo.text.y=y-dragInfo.dy;
-      redraw(); scheduleSave();
-    }
-  }
-  function endTypingPointer(){ dragInfo=null; }
-  function handleKey(e){
-    if(e.key==="Escape"){ if(typeMode){ setTypeMode(false); } return; }
-    if(!typeMode || !activeText) return;
-    if(e.key==="Enter"){ e.preventDefault(); activeText.lines.push(""); redraw(); scheduleSave(); return; }
-    if(e.key==="Backspace"){
-      e.preventDefault();
-      const line=activeText.lines.at(-1)||"";
-      if(line.length>0) activeText.lines[activeText.lines.length-1]=line.slice(0,-1);
-      else if(activeText.lines.length>1) activeText.lines.pop();
-      redraw(); scheduleSave(); return;
-    }
-    if(e.key.length===1){
-      activeText.lines[activeText.lines.length-1]+=e.key;
-      redraw(); scheduleSave(); return;
-    }
-  }
-  function startCaretBlink(){ stopCaretBlink(); caretVisible=true; caretTimer=setInterval(()=>{ caretVisible=!caretVisible; redraw(); },500); }
-  function stopCaretBlink(){ if(caretTimer){ clearInterval(caretTimer); caretTimer=null; } caretVisible=true; }
 
-  /* ================= Draw interactions ================= */
-  function startStroke(e){
-    isDrawing=true;
-    current={points:[],color:"#0c1e16",base:parseFloat(ui.thick.value||ui.thick2.value),smooth:parseFloat(ui.smooth.value||ui.smooth2.value)};
-    current.points.push(toCanvasCoords(e));
-  }
-  function extendStroke(e){ if(!isDrawing||!current) return; current.points.push(toCanvasCoords(e)); redraw(); }
-  function endStroke(){ if(!isDrawing||!current) return; strokes.push(current); history.push({type:"stroke"}); current=null; isDrawing=false; redraw(); scheduleSave(); }
-
-  /* ================= Redraw ================= */
+  // While editor is open, skip drawing the active text on canvas to avoid double rendering
   function redraw(){
     ctx.clearRect(0,0,ink.width,ink.height);
     for(const s of strokes) drawPath(s.points,s.color,s.base,s.smooth);
     if(current) drawPath(current.points,current.color,current.base,current.smooth);
-    for(const t of texts) drawTextObject(t);
-    if(activeText) drawCaretFor(activeText);
+    for(const t of texts){
+      if(typing && activeText && t===activeText && ui.inlineEditor.style.display==='block') continue;
+      drawTextObject(t);
+    }
   }
+
+  // Keep editor aligned on scroll / resize (minor guard)
+  window.addEventListener('scroll', ()=>{ if(typing && activeText) setEditorStyleFor(activeText); }, {passive:true});
+
+  /* ================= Mode toggle (segmented) ================= */
+  function updateSegUI(){
+    if(typeMode){
+      ui.segType.classList.add('active'); ui.segType.setAttribute('aria-selected','true');
+      ui.segDraw.classList.remove('active'); ui.segDraw.setAttribute('aria-selected','false');
+    }else{
+      ui.segDraw.classList.add('active'); ui.segDraw.setAttribute('aria-selected','true');
+      ui.segType.classList.remove('active'); ui.segType.setAttribute('aria-selected','false');
+    }
+  }
+  function setTypeMode(on){
+    ignoreResizeUntil = now() + MICRO_GUARD_MS;
+    typeMode=on; updateSegUI();
+    // Blur any toolbar input to avoid surprise keyboards
+    if (document.activeElement && document.activeElement !== ui.inlineEditor) {
+      document.activeElement.blur?.();
+    }
+    // Lock resizes while typing
+    suspendResize=on;
+
+    if(!on){
+      // Leaving type mode: commit and hide editor
+      if(typing && activeText){
+        updateActiveTextFromEditor();
+      }
+      typing=false; hideEditor();
+      activeText=null;
+      redraw();
+      debouncedResizeAll();
+    }
+  }
+  ui.segDraw.addEventListener('click', ()=> setTypeMode(false));
+  ui.segType.addEventListener('click', ()=> setTypeMode(true));
+
+  /* ================= Pointer routing ================= */
+  ink.addEventListener("pointerdown",e=>{
+    ink.setPointerCapture(e.pointerId);
+    typeMode ? startTypingAt(e) : startStroke(e);
+  });
+  ink.addEventListener("pointermove",e=>{ typeMode ? null : extendStroke(e); });
+  ink.addEventListener("pointerup",e=>{
+    ink.releasePointerCapture(e.pointerId);
+    typeMode ? null : endStroke();
+  });
+  ink.addEventListener("pointercancel",()=>{ typeMode ? null : endStroke(); });
+
+  /* ================= Editor events ================= */
+  ui.inlineEditor.addEventListener('input', updateActiveTextFromEditor);
+  ui.inlineEditor.addEventListener('blur', ()=>{
+    // Commit when focus leaves the editor (including toggling to Draw)
+    if(typing && activeText){
+      updateActiveTextFromEditor();
+    }
+    // Keep typing mode until user actually switches or taps elsewhere
+    hideEditor();
+    redraw();
+  });
+
+  /* ================= Buttons ================= */
+  function doUndo(){
+    const last=history.pop();
+    if(last){ if(last.type==="stroke") strokes.pop(); else if(last.type==="text") texts.pop(); redraw(); scheduleSave(); }
+  }
+  ui.undoBtn.addEventListener("click", doUndo);
+
+  function newPage(){
+    strokes=[]; texts=[]; history=[]; current=null;
+    // If editing, hide and reset
+    typing=false; activeText=null; hideEditor();
+    redraw(); flashPerforation(); scheduleSave();
+  }
+  ui.clear?.addEventListener("click", newPage);
+  ui.clear2?.addEventListener("click", ()=>{ newPage(); closePopover(); });
+
+  // Sync duplicate controls in popover and toolbar
+  function syncFont(from, to){ to.value = from.value; if(activeText){ activeText.font = to.value || ""; setEditorStyleFor(activeText); redraw(); scheduleSave(); } }
+  function syncSize(from, to){
+    to.value = from.value;
+    if(activeText){
+      activeText.size = Math.max(8, parseInt(to.value,10)||20);
+      setEditorStyleFor(activeText);
+      redraw(); scheduleSave();
+    }
+  }
+  function syncRange(from, to, key){ to.value = from.value; if(current) current[key] = parseFloat(to.value); }
+
+  ui.fontSel.addEventListener("change", ()=> syncFont(ui.fontSel, ui.fontSel2));
+  ui.fontSel2.addEventListener("change", ()=>{ syncFont(ui.fontSel2, ui.fontSel); closePopover(); });
+
+  ui.fontSize.addEventListener("input", ()=> syncSize(ui.fontSize, ui.fontSize2));
+  ui.fontSize2.addEventListener("input", ()=>{ syncSize(ui.fontSize2, ui.fontSize); });
+
+  ui.thick.addEventListener("input", ()=> syncRange(ui.thick, ui.thick2, 'base'));
+  ui.thick2.addEventListener("input", ()=>{ syncRange(ui.thick2, ui.thick, 'base'); });
+
+  ui.smooth.addEventListener("input", ()=> syncRange(ui.smooth, ui.smooth2, 'smooth'));
+  ui.smooth2.addEventListener("input", ()=>{ syncRange(ui.smooth2, ui.smooth, 'smooth'); });
 
   /* ================= Toolbar: collapse / popover ================= */
   function setCollapsed(v){
@@ -562,14 +677,11 @@
   document.addEventListener('click', (e)=>{
     if (!ui.popover.contains(e.target) && e.target !== ui.moreBtn) closePopover();
   });
-
   ui.collapseBtn.addEventListener('click', ()=>{
     ignoreResizeUntil = now() + MICRO_GUARD_MS;
     const collapsed = toolbar.classList.contains('collapsed');
     setCollapsed(!collapsed);
   });
-
-  // Initial collapsed state
   (function initCollapsed(){
     const saved = localStorage.getItem('pad.collapsed');
     const preferCollapsed = saved != null ? saved === '1'
@@ -577,81 +689,15 @@
     setCollapsed(preferCollapsed);
   })();
 
-  /* ================= Mode toggle (segmented) ================= */
-  function updateSegUI(){
-    if(typeMode){
-      ui.segType.classList.add('active'); ui.segType.setAttribute('aria-selected','true');
-      ui.segDraw.classList.remove('active'); ui.segDraw.setAttribute('aria-selected','false');
-    }else{
-      ui.segDraw.classList.add('active'); ui.segDraw.setAttribute('aria-selected','true');
-      ui.segType.classList.remove('active'); ui.segType.setAttribute('aria-selected','false');
-    }
-  }
-  function setTypeMode(on){
-    ignoreResizeUntil = now() + MICRO_GUARD_MS;
-    typeMode=on;
-    updateSegUI();
-    suspendResize=on; // lock resizes while typing
-    if(!on){
-      typing=false; activeText=null; stopCaretBlink();
-      redraw();
-      debouncedResizeAll();
-    }
-  }
-  ui.segDraw.addEventListener('click', ()=> setTypeMode(false));
-  ui.segType.addEventListener('click', ()=> setTypeMode(true));
-
-  /* ================= Buttons ================= */
-  function doUndo(){
-    const last=history.pop();
-    if(last){ if(last.type==="stroke") strokes.pop(); else if(last.type==="text") texts.pop(); redraw(); scheduleSave(); }
-  }
-  ui.undoBtn.addEventListener("click", doUndo);
-
-  // New Page in both places
-  function newPage(){
-    strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink();
-    redraw(); flashPerforation(); scheduleSave();
-  }
-  if(ui.clear) ui.clear.addEventListener("click", newPage);
-  if(ui.clear2) ui.clear2.addEventListener("click", ()=>{ newPage(); closePopover(); });
-
-  // Sync duplicate controls in popover and toolbar
-  function syncFont(from, to){ to.value = from.value; if(activeText){ activeText.font = to.value || ""; redraw(); scheduleSave(); } }
-  function syncSize(from, to){ to.value = from.value; if(activeText){ activeText.size = Math.max(8, parseInt(to.value,10)||20); redraw(); scheduleSave(); } }
-  function syncRange(from, to, key){
-    to.value = from.value;
-    if(current) current[key] = parseFloat(to.value);
-  }
-
-  ui.fontSel.addEventListener("change", ()=> syncFont(ui.fontSel, ui.fontSel2));
-  ui.fontSel2.addEventListener("change", ()=>{ syncFont(ui.fontSel2, ui.fontSel); closePopover(); });
-
-  ui.fontSize.addEventListener("input", ()=> syncSize(ui.fontSize, ui.fontSize2));
-  ui.fontSize2.addEventListener("input", ()=>{ syncSize(ui.fontSize2, ui.fontSize); });
-
-  ui.thick.addEventListener("input", ()=> syncRange(ui.thick, ui.thick2, 'base'));
-  ui.thick2.addEventListener("input", ()=>{ syncRange(ui.thick2, ui.thick, 'base'); });
-
-  ui.smooth.addEventListener("input", ()=> syncRange(ui.smooth, ui.smooth2, 'smooth'));
-  ui.smooth2.addEventListener("input", ()=>{ syncRange(ui.smooth2, ui.smooth, 'smooth'); });
-
-  /* ================= Pointer routing ================= */
-  ink.addEventListener("pointerdown",e=>{
-    ink.setPointerCapture(e.pointerId);
-    typeMode ? startTypingAt(e) : startStroke(e);
-  });
-  ink.addEventListener("pointermove",e=>{ typeMode ? onPointerMoveType(e) : extendStroke(e); });
-  ink.addEventListener("pointerup",e=>{
-    ink.releasePointerCapture(e.pointerId);
-    typeMode ? endTypingPointer() : endStroke();
-  });
-  ink.addEventListener("pointercancel",()=>{ typeMode ? endTypingPointer() : endStroke(); });
-
   /* ================= Keyboard ================= */
   window.addEventListener("keydown",e=>{
-    // Removed: 'u' keyboard shortcut for Undo to avoid accidental triggers while typing
-    handleKey(e);
+    // No 'u' shortcut anymore to avoid accidental undo while typing
+    if(e.key==="Escape"){
+      if(typeMode){
+        // Exit type mode entirely (committing text)
+        setTypeMode(false);
+      }
+    }
   });
 
   /* ================= Perforation flash & Tear Off ================= */
@@ -661,6 +707,8 @@
     setTimeout(()=> el.classList.remove("tearing"), 800);
   }
   ui.tear.addEventListener("click",()=>{
+    // Commit any active editor first
+    if(typing && activeText){ updateActiveTextFromEditor(); hideEditor(); typing=false; }
     const off=document.createElement("canvas");
     off.width=grid.width; off.height=grid.height;
     const otx=off.getContext("2d");
@@ -674,7 +722,7 @@
       URL.revokeObjectURL(a.href); a.remove();
     },"image/png");
     flashPerforation();
-    setTimeout(()=>{ strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink(); redraw(); scheduleSave(); }, 380);
+    setTimeout(()=>{ strokes=[]; texts=[]; history=[]; current=null; activeText=null; typing=false; redraw(); scheduleSave(); }, 380);
   });
 
   /* ================= Init ================= */
