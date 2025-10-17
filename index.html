@@ -23,6 +23,11 @@
 
     --shadow:rgba(0,0,0,.25);
     --perforation:#d2e8db;
+
+    --seg-bg:rgba(0,0,0,.06);
+    --seg-border:rgba(0,0,0,.14);
+    --seg-active:#ffffff;
+    --seg-active-border:rgba(0,0,0,.18);
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
@@ -34,14 +39,14 @@
   }
   .wrap{position:relative;width:100%;min-height:100svh;height:100%;overflow:hidden}
 
-  /* Toolbar */
+  /* Toolbar: edge-to-edge, wraps if needed */
   .toolbar{
-    position:absolute;top:8px;left:50%;transform:translateX(-50%);
-    display:flex;gap:12px;align-items:center;flex-wrap:nowrap;
-    padding:8px 12px;background:rgba(255,255,255,.7);
+    position:absolute; top:8px; left:8px; right:8px; transform:none;
+    display:flex; flex-wrap:wrap; align-items:center; gap:12px;
+    padding:8px 12px; background:rgba(255,255,255,.7);
     backdrop-filter:saturate(1.2) blur(6px);
-    border:1px solid rgba(0,0,0,.08);border-radius:14px;
-    box-shadow:0 6px 18px var(--shadow);z-index:4;user-select:none;
+    border:1px solid rgba(0,0,0,.08); border-radius:14px;
+    box-shadow:0 6px 18px var(--shadow); z-index:4; user-select:none;
   }
   .toolbar.collapsed{ gap:6px; padding:6px 8px; }
 
@@ -67,19 +72,29 @@
   }
   .btn.secondary:hover{background:rgba(0,0,0,.04)}
   .btn.secondary:active{background:rgba(0,0,0,.08)}
-  .btn.toggle.active{
-    background:rgba(0,0,0,.04);
-    box-shadow:inset 0 0 0 2px rgba(0,0,0,.12);
-  }
-  .btn.toggle.active:active{background:rgba(0,0,0,.08)}
   .btn.icon.only{padding:8px 10px; min-width:38px}
   .toolbar.collapsed .btn{padding:6px 10px;border-radius:10px}
 
   .hint{font-size:.85rem;color:var(--ui-muted);white-space:nowrap}
   .toolbar.collapsed .hint{display:none}
 
-  /* Advanced controls group (shown only in expanded toolbar) */
-  .controls-row{display:flex;align-items:center;gap:10px}
+  /* Segmented pill: Draw | Type */
+  .seg{
+    display:inline-flex; border-radius:9999px; padding:3px; gap:2px;
+    background:var(--seg-bg); border:1px solid var(--seg-border);
+  }
+  .seg button{
+    border:0; background:transparent; padding:6px 12px; border-radius:9999px;
+    font-weight:600; cursor:pointer;
+    transition:background .15s ease, box-shadow .15s ease, transform .05s ease;
+  }
+  .seg button:active{ transform:translateY(1px) }
+  .seg button.active{
+    background:var(--seg-active); box-shadow:0 1px 0 rgba(0,0,0,.06), 0 0 0 1px var(--seg-active-border) inset;
+  }
+
+  /* Advanced controls row (expanded only) */
+  .controls-row{display:flex;align-items:center;gap:10px; flex-wrap:wrap}
   .control{display:flex;align-items:center;gap:8px;font-size:.9rem;white-space:nowrap}
   .select,.range,.number{
     padding:6px 8px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.85)
@@ -87,8 +102,8 @@
   input[type=range]{accent-color:var(--accent)}
   label{color:var(--ui-muted)}
 
-  /* Ellipsis + Popover */
-  .more{display:none}                         /* hidden in expanded; visible in collapsed */
+  /* Ellipsis + Popover (collapsed advanced controls) */
+  .more{display:none}
   .toolbar.collapsed .more{display:inline-flex}
   .popover{
     position:absolute; top:100%; right:8px; margin-top:8px; z-index:5;
@@ -103,7 +118,7 @@
   .popover .line{height:1px;background:rgba(0,0,0,.08);margin:8px 0}
 
   /* Collapse chevron */
-  .collapse-btn{margin-left:4px}
+  .collapse-btn{margin-left:auto} /* push to the right edge of current row */
   .collapse-btn .chev{display:inline-block; transition:transform .18s ease}
   .toolbar.collapsed .collapse-btn .chev{transform:rotate(180deg)} /* ▲ -> ▼ effect */
 
@@ -111,7 +126,7 @@
   canvas#grid,canvas#ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   canvas#grid{z-index:0} canvas#ink{z-index:1}
 
-  /* Perforation line */
+  /* Perforation line (just for look; toolbar can flow over it now) */
   .tear-overlay{
     pointer-events:none;position:absolute;left:0;right:0;top:58px;height:14px;z-index:2;
     background:repeating-linear-gradient(90deg,transparent 0 16px,var(--perforation) 16px 18px),
@@ -152,10 +167,14 @@
 
     <button class="btn tear" id="tear">Tear Off</button>
     <button class="btn secondary" id="undoBtn">Undo</button>
-    <!-- Toggle shows CURRENT mode -->
-    <button class="btn secondary toggle" id="typeToggle" aria-pressed="false">Draw</button>
 
-    <!-- Expanded-only advanced controls row -->
+    <!-- Segmented pill: Draw | Type -->
+    <div class="seg" role="tablist" aria-label="Input mode">
+      <button id="segDraw" role="tab" aria-selected="true" class="active" title="Draw mode">Draw</button>
+      <button id="segType" role="tab" aria-selected="false" title="Type mode">Type</button>
+    </div>
+
+    <!-- Expanded-only advanced controls -->
     <div class="controls-row" id="controlsRow">
       <button class="btn secondary" id="clear">New Page</button>
       <div class="control">
@@ -183,8 +202,8 @@
     <!-- Collapsed-only: more (popover) -->
     <button class="btn secondary icon only more" id="moreBtn" aria-haspopup="true" aria-expanded="false" title="More">⋯</button>
 
-    <!-- Collapse chevron -->
-    <button class="btn secondary icon only collapse-btn" id="collapseBtn" aria-expanded="true" title="Collapse toolbar">
+    <!-- Collapse chevron (right aligned in its row) -->
+    <button class="btn secondary icon only collapse-btn" id="collapseBtn" aria-expanded="false" title="Collapse/Expand toolbar">
       <span class="chev">▲</span>
     </button>
 
@@ -238,7 +257,8 @@
     clear:document.getElementById("clear"),
     clear2:document.getElementById("clear2"),
     undoBtn:document.getElementById("undoBtn"),
-    typeToggle:document.getElementById("typeToggle"),
+    segDraw:document.getElementById("segDraw"),
+    segType:document.getElementById("segType"),
     thick:document.getElementById("thick"),
     smooth:document.getElementById("smooth"),
     fontSel:document.getElementById("fontSel"),
@@ -406,7 +426,7 @@
       activeText=hit.t; typing=true;
       dragInfo={text:hit.t, dx:x-hit.t.x, dy:y-hit.t.y, dragging:false};
     }else{
-      const t={ x,y, lines:[""], font:ui.fontSel.value||ui.fontSel2.value||"", size:parseInt(ui.fontSize.value||ui.fontSize2.value,10)||20 };
+      const t={ x,y, lines:[""], font:(ui.fontSel.value||ui.fontSel2.value||""), size:parseInt(ui.fontSize.value||ui.fontSize2.value,10)||20 };
       texts.push(t); history.push({type:"text"});
       activeText=t; typing=true;
       dragInfo={text:t, dx:0, dy:0, dragging:false};
@@ -480,7 +500,6 @@
     if(open){
       ui.popover.classList.add('open');
       ui.moreBtn.setAttribute('aria-expanded','true');
-      // align popover to toolbar's right edge
       const tbRect = toolbar.getBoundingClientRect();
       ui.popover.style.right = '8px';
     }else{
@@ -497,7 +516,7 @@
     setCollapsed(!collapsed);
   });
 
-  // Initial collapsed state: default collapsed on tablets; overridden by saved pref
+  // Initial collapsed state (persisted; default collapsed on tablets)
   (function initCollapsed(){
     const saved = localStorage.getItem('pad.collapsed');
     const preferCollapsed = saved != null ? saved === '1'
@@ -505,22 +524,29 @@
     setCollapsed(preferCollapsed);
   })();
 
-  /* ================= Mode toggle ================= */
+  /* ================= Mode toggle (segmented) ================= */
+  function updateSegUI(){
+    if(typeMode){
+      ui.segType.classList.add('active'); ui.segType.setAttribute('aria-selected','true');
+      ui.segDraw.classList.remove('active'); ui.segDraw.setAttribute('aria-selected','false');
+    }else{
+      ui.segDraw.classList.add('active'); ui.segDraw.setAttribute('aria-selected','true');
+      ui.segType.classList.remove('active'); ui.segType.setAttribute('aria-selected','false');
+    }
+  }
   function setTypeMode(on){
     ignoreResizeUntil = now() + MICRO_GUARD_MS;
     typeMode=on;
-    ui.typeToggle.classList.toggle("active",on);
-    ui.typeToggle.textContent = on ? "Type" : "Draw"; // show CURRENT mode
-    ui.typeToggle.setAttribute("aria-pressed", on ? "true" : "false");
+    updateSegUI();
     suspendResize=on; // lock resizes while typing
-
     if(!on){
       typing=false; activeText=null; stopCaretBlink();
       redraw();
       debouncedResizeAll();
     }
   }
-  ui.typeToggle.addEventListener("click",()=> setTypeMode(!typeMode));
+  ui.segDraw.addEventListener('click', ()=> setTypeMode(false));
+  ui.segType.addEventListener('click', ()=> setTypeMode(true));
 
   /* ================= Buttons ================= */
   function doUndo(){
@@ -600,14 +626,14 @@
 
   /* ================= Init ================= */
   function initialControlSync(){
-    // Ensure popover controls mirror toolbar defaults
     ui.fontSel2.value = ui.fontSel.value;
     ui.fontSize2.value = ui.fontSize.value;
     ui.thick2.value = ui.thick.value;
     ui.smooth2.value = ui.smooth.value;
   }
   initialControlSync();
-  resizeAll(); // default: drawing mode
+  updateSegUI();       // ensure pill matches default (Draw)
+  resizeAll();         // default: drawing mode
 })();
 </script>
 </body>
