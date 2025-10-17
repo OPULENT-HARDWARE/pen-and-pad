@@ -18,6 +18,7 @@
     --seg-active-border:rgba(0,0,0,.18);
 
     --editor-border: 2px dashed rgba(12,30,22,.35);
+    --clamp-pad: 16px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
@@ -143,6 +144,17 @@
   }
   .toast.show{opacity:1}
 
+  /* Edge glow for auto-clamp feedback */
+  .edgeglow{
+    position:absolute; z-index:5; display:none;
+    border:2px solid rgba(26,163,111,.9);
+    box-shadow:0 0 0 4px rgba(26,163,111,.18), 0 0 18px rgba(26,163,111,.35);
+    border-radius:8px; pointer-events:none; transition:opacity .18s ease;
+    opacity:0;
+  }
+  .edgeglow.show{ display:block; opacity:1; }
+  .edgeglow.fade{ opacity:0; }
+
   @media (min-width:768px) and (pointer:coarse){
     .toolbar{gap:10px}
     .btn{padding:7px 10px;border-radius:10px}
@@ -232,29 +244,27 @@
   </div>
 
   <div id="toast" class="toast">Saved</div>
+  <div id="edgeGlow" class="edgeglow"></div>
 </div>
 <div id="status" class="status" title="Tap to view last error"></div>
 
 <script>
 (function(){
-  /* ---------- tiny helper ---------- */
   function $(id){ return document.getElementById(id); }
 
-  /* ---------- error guard + indicator ---------- */
   const statusDot = $("status");
   function setOK(v){ statusDot.classList.toggle("ok", !!v); }
   function reportError(err){
     console.error(err);
     setOK(false);
     statusDot.title = "Last error: " + (err && err.message ? err.message : String(err));
-    // also show a quick toast if we can
     try{ toast("Error: " + (err.message||String(err))); }catch(_){}
   }
-  window.addEventListener("error", e=>{ reportError(e.error||e.message||"Unknown error"); });
-  window.addEventListener("unhandledrejection", e=>{ reportError(e.reason||"Unhandled promise rejection"); });
+  window.addEventListener("error", function(e){ reportError(e.error||e.message||"Unknown error"); });
+  window.addEventListener("unhandledrejection", function(e){ reportError(e.reason||"Unhandled promise rejection"); });
 
   try{
-    /* ================= Core setup ================= */
+    /* ================= Core ================= */
     const toolbar = $("toolbar");
     const grid=$("grid"), ink=$("ink");
     const gtx=grid.getContext("2d"), ctx=ink.getContext("2d");
@@ -268,13 +278,13 @@
       pageAnim:$("pageAnim"), moreBtn:$("moreBtn"), popover:$("popover"),
       collapseBtn:$("collapseBtn"), controlsRow:$("controlsRow"),
       inlineEditor:$("inlineEditor"), editbar:$("editbar"), ebDone:$("ebDone"), ebCancel:$("ebCancel"),
-      toast:$("toast")
+      toast:$("toast"), edgeGlow:$("edgeGlow")
     };
 
     function getDPR(){ return Math.max(1, window.devicePixelRatio || 1); }
     let dpr = getDPR();
 
-    /* ============== Stability guards (keyboard / viewport) ============== */
+    /* ================= Layout / resize guards ================= */
     let suspendResize=false, keyboardLock=false, ignoreResizeUntil=0, resizeTimer=null;
     const DEBOUNCE_MS=180, MICRO_GUARD_MS=250;
     const now=()=>performance.now();
@@ -307,7 +317,6 @@
         lastVVH=vvh;
       }, {passive:true});
     }
-
     if (document.fonts && document.fonts.ready){
       document.fonts.ready.then(function(){ redraw(); }).catch(function(){});
       if (document.fonts.addEventListener){
@@ -319,7 +328,6 @@
     window.addEventListener('orientationchange', function(){ debouncedResizeAll(); });
     window.addEventListener('resize', debouncedResizeAll, {passive:true});
     window.addEventListener('load', function(){ requestAnimationFrame(function(){ resizeAll(); requestAnimationFrame(resizeAll); }); });
-
     if (window.ResizeObserver){
       new ResizeObserver(function(){ debouncedResizeAll(); }).observe(document.body);
     }
@@ -343,10 +351,17 @@
     let strokes=[], texts=[], history=[];
     let isDrawing=false, current=null;
     let typeMode=false; // default draw
-    let typing=false, activeText=null, activeIsNew=false;
-    let composing=false;
+    let typing=false, activeText=null, activeIsNew=false, composing=false;
 
-    /* ================= Autosave / Restore ================= */
+    /* Drag state */
+    let drag=null; // {t, dx, dy, active}
+    let pressTimer=null;
+    let pointerDown=false;
+    let pointerStart=null;
+    const LONGPRESS_MS=250;
+    const MOVE_THRESHOLD=6; // px tolerance before cancelling longpress
+
+    /* ================= Autosave ================= */
     const SAVE_KEY='pad.state.v1';
     let saveTimer=null, dirty=false;
     function serialize(){
@@ -416,7 +431,7 @@
       ctx.stroke(); ctx.restore();
     }
 
-    /* ================= Text drawing & hit test ================= */
+    /* ================= Text drawing & bounds ================= */
     function setCanvasFont(font,sizePx){
       const DEF="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
       const stack=(typeof font==="string" && font.trim().length)? font : DEF;
@@ -433,16 +448,21 @@
       let y=t.y;
       for(var i=0;i<t.lines.length;i++){ ctx.fillText(t.lines[i],t.x,y); y+=lh; }
     }
+    function textBounds(t){
+      setCanvasFont(t.font,t.size);
+      const lh=Math.round(t.size*1.35)*dpr;
+      var maxW=20*dpr;
+      for(var i=0;i<t.lines.length;i++){
+        var w=ctx.measureText(t.lines[i]).width; if(w>maxW) maxW=w;
+      }
+      const h=Math.max(lh*t.lines.length, lh);
+      const left=t.x-4*dpr, top=t.y - (t.size*1.05)*dpr;
+      return {left:left, top:top, width:maxW+8*dpr, height:h+6*dpr};
+    }
     function textAtPoint(x,y){
       for(let i=texts.length-1;i>=0;i--){
-        const t=texts[i];
-        setCanvasFont(t.font,t.size);
-        const lh=Math.round(t.size*1.35)*dpr;
-        const widths = t.lines.map(function(l){return ctx.measureText(l).width;});
-        const w=Math.max.apply(null, widths.concat([20*dpr]));
-        const h=Math.max(lh*t.lines.length, lh);
-        const L=t.x-4*dpr, T=t.y-(t.size*1.05)*dpr;
-        if(x>=L && x<=L+w+8*dpr && y>=T && y<=T+h+6*dpr) return {t:t,i:i};
+        const t=texts[i], b=textBounds(t);
+        if(x>=b.left && x<=b.left+b.width && y>=b.top && y<=b.top+b.height) return {t:t,i:i};
       }
       return null;
     }
@@ -523,6 +543,7 @@
         return;
       }
       activeText.lines = lines;
+      clampTextIntoView(activeText, true);
       redraw(); scheduleSave();
       if(showToast) toast("Saved");
     }
@@ -531,19 +552,12 @@
     ui.inlineEditor.addEventListener('compositionend', function(){ composing=false; commitEditorToActive(); });
     ui.inlineEditor.addEventListener('input', function(){ if(!composing){ commitEditorToActive({showToast:false}); } });
     ui.inlineEditor.addEventListener('blur', function(){
-      if(composing){
-        setTimeout(function(){ commitEditorToActive(); }, 200);
-      }else{
-        commitEditorToActive();
-      }
+      if(composing){ setTimeout(function(){ commitEditorToActive(); }, 200); }
+      else{ commitEditorToActive(); }
       hideEditor();
       typing=false;
     });
-
-    ui.ebDone.addEventListener('click', function(){
-      commitEditorToActive();
-      hideEditor(); typing=false;
-    });
+    ui.ebDone.addEventListener('click', function(){ commitEditorToActive(); hideEditor(); typing=false; });
     ui.ebCancel.addEventListener('click', function(){
       if(activeIsNew && activeText){
         const idx = texts.indexOf(activeText);
@@ -552,6 +566,37 @@
       }
       hideEditor(); typing=false; activeText=null; activeIsNew=false;
     });
+
+    /* ================= Clamp + edge glow ================= */
+    function clampTextIntoView(t, showGlow){
+      const pad = 16 * dpr;
+      const b = textBounds(t);
+      let dx=0, dy=0;
+      if (b.left < pad) dx = pad - b.left;
+      if (b.top  < pad) dy = pad - b.top;
+      if ((b.left + b.width)  > (ink.width - pad))  dx = (ink.width - pad) - (b.left + b.width);
+      if ((b.top  + b.height) > (ink.height - pad)) dy = (ink.height - pad) - (b.top + b.height);
+      if (dx!==0 || dy!==0){
+        t.x += dx; t.y += dy;
+        if (showGlow) flashEdgeGlow(t);
+      }
+    }
+    function flashEdgeGlow(t){
+      const r = ink.getBoundingClientRect();
+      const b = textBounds(t);
+      const css = {
+        left: (r.left + b.left/dpr) + "px",
+        top:  (r.top  + b.top /dpr) + "px",
+        width: (b.width/dpr) + "px",
+        height:(b.height/dpr) + "px"
+      };
+      const eg = ui.edgeGlow;
+      eg.style.left=css.left; eg.style.top=css.top; eg.style.width=css.width; eg.style.height=css.height;
+      eg.classList.remove("fade"); eg.classList.add("show");
+      clearTimeout(eg._timer);
+      eg._timer = setTimeout(function(){ eg.classList.add("fade"); }, 120);
+      setTimeout(function(){ eg.classList.remove("show"); eg.classList.remove("fade"); }, 600);
+    }
 
     /* ================= Typing interactions ================= */
     function startTypingAt(e){
@@ -630,6 +675,32 @@
       strokes.push(current); history.push({type:"stroke"}); current=null; isDrawing=false; redraw(); scheduleSave();
     }
 
+    /* ================= Drag to move (text) ================= */
+    function startDrag(pt, hit, pointerType){
+      drag = { t:hit.t, dx: pt.x - hit.t.x, dy: pt.y - hit.t.y, active:true };
+      // hide editor while dragging
+      if (ui.inlineEditor.style.display==='block'){ hideEditor(); typing=false; }
+    }
+    function updateDrag(pt){
+      if(!drag || !drag.active) return;
+      // grid snap to dot spacing (20px)
+      var nx = pt.x - drag.dx;
+      var ny = pt.y - drag.dy;
+      var gap = 20 * dpr;
+      nx = Math.round(nx / gap) * gap;
+      ny = Math.round(ny / gap) * gap;
+      drag.t.x = nx; drag.t.y = ny;
+      redraw();
+    }
+    function endDrag(){
+      if(!drag) return;
+      clampTextIntoView(drag.t, true);
+      redraw(); scheduleSave();
+      drag = null;
+    }
+
+    function dist(a,b){ var dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
+
     /* ================= Buttons ================= */
     function doUndo(){
       const last=history.pop();
@@ -701,12 +772,77 @@
     /* ================= Pointer routing (non-passive) ================= */
     ink.addEventListener("pointerdown", function(e){
       ink.setPointerCapture(e.pointerId);
-      if (typeMode){ startTypingAt(e); return; }
+      const pt = toCanvasCoords(e);
+      pointerDown = true;
+      pointerStart = {x:pt.x, y:pt.y, clientX:e.clientX, clientY:e.clientY};
+      const hit = textAtPoint(pt.x, pt.y);
+
+      // If touching a text block: prep drag; mouse starts immediately, touch waits for long-press
+      if (hit){
+        e.preventDefault();
+        // Cancel any active editor (we're moving)
+        if (ui.inlineEditor.style.display==='block'){ hideEditor(); typing=false; }
+
+        if (e.pointerType === "mouse" || e.pointerType === "pen"){
+          startDrag(pt, hit, e.pointerType);
+        } else {
+          clearTimeout(pressTimer);
+          pressTimer = setTimeout(function(){
+            if (pointerDown && !isDrawing && (!drag || !drag.active)){
+              startDrag(pt, hit, e.pointerType);
+            }
+          }, LONGPRESS_MS);
+        }
+        return;
+      }
+
+      // Not on a text block
+      if (typeMode){
+        startTypingAt(e);
+        return;
+      }
       startStroke(e);
     }, {passive:false});
-    ink.addEventListener("pointermove", function(e){ if(typeMode) return; extendStroke(e); }, {passive:false});
-    ink.addEventListener("pointerup",   function(e){ if(typeMode) return; ink.releasePointerCapture(e.pointerId); endStroke(e); }, {passive:false});
-    ink.addEventListener("pointercancel", function(e){ if(typeMode) return; endStroke(e); }, {passive:false});
+
+    ink.addEventListener("pointermove", function(e){
+      const pt = toCanvasCoords(e);
+      // If moving before long-press fired on touch, cancel long-press if user slides away too far
+      if (pressTimer && pointerStart){
+        const dx = Math.abs(e.clientX - pointerStart.clientX);
+        const dy = Math.abs(e.clientY - pointerStart.clientY);
+        if (dx>MOVE_THRESHOLD || dy>MOVE_THRESHOLD){
+          clearTimeout(pressTimer); pressTimer=null;
+        }
+      }
+      if (drag && drag.active){
+        e.preventDefault();
+        updateDrag(pt);
+        return;
+      }
+      if (typeMode) return;
+      extendStroke(e);
+    }, {passive:false});
+
+    ink.addEventListener("pointerup", function(e){
+      ink.releasePointerCapture(e.pointerId);
+      pointerDown=false;
+      clearTimeout(pressTimer); pressTimer=null;
+
+      if (drag && drag.active){
+        e.preventDefault();
+        endDrag();
+        return;
+      }
+      if (typeMode) return;
+      endStroke(e);
+    }, {passive:false});
+
+    ink.addEventListener("pointercancel", function(e){
+      pointerDown=false;
+      clearTimeout(pressTimer); pressTimer=null;
+      if (drag && drag.active){ endDrag(); }
+      else if(!typeMode){ endStroke(e); }
+    }, {passive:false});
 
     /* ================= Keyboard ================= */
     window.addEventListener("keydown",function(e){
@@ -747,15 +883,15 @@
     initialControlSync();
     updateSegUI();
     resizeAll();
-    setOK(true); // ready
+    setOK(true);
   }catch(err){
     reportError(err);
   }
 
-  // Tap the status dot to see last error (if any)
   $("status").addEventListener('click', function(){
     alert(this.title || "All good!");
   });
+
 })();
 </script>
 </body>
