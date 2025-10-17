@@ -136,7 +136,15 @@
     background:transparent; color:var(--ui); border:1px solid rgba(0,0,0,.12);}
   .editbar .ebtn:active{ background:rgba(0,0,0,.08) }
 
-  /* Subtle edge glow when auto-clamped */
+  .toast{
+    position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    background:rgba(17,51,38,.92); color:#fff; padding:8px 12px;
+    border-radius:10px; font-size:.85rem; box-shadow:0 6px 18px rgba(0,0,0,.25);
+    z-index:8; opacity:0; pointer-events:none; transition:opacity .18s ease;
+  }
+  .toast.show{opacity:1}
+
+  /* Edge glow for auto-clamp feedback */
   .edgeglow{
     position:absolute; z-index:5; display:none;
     border:2px solid rgba(26,163,111,.9);
@@ -235,6 +243,7 @@
     <button id="ebCancel" class="ebtn">⨯ Cancel</button>
   </div>
 
+  <div id="toast" class="toast">Saved</div>
   <div id="edgeGlow" class="edgeglow"></div>
 </div>
 <div id="status" class="status" title="Tap to view last error"></div>
@@ -249,6 +258,7 @@
     console.error(err);
     setOK(false);
     statusDot.title = "Last error: " + (err && err.message ? err.message : String(err));
+    try{ toast("Error: " + (err.message||String(err))); }catch(_){}
   }
   window.addEventListener("error", function(e){ reportError(e.error||e.message||"Unknown error"); });
   window.addEventListener("unhandledrejection", function(e){ reportError(e.reason||"Unhandled promise rejection"); });
@@ -268,7 +278,7 @@
       pageAnim:$("pageAnim"), moreBtn:$("moreBtn"), popover:$("popover"),
       collapseBtn:$("collapseBtn"), controlsRow:$("controlsRow"),
       inlineEditor:$("inlineEditor"), editbar:$("editbar"), ebDone:$("ebDone"), ebCancel:$("ebCancel"),
-      edgeGlow:$("edgeGlow")
+      toast:$("toast"), edgeGlow:$("edgeGlow")
     };
 
     function getDPR(){ return Math.max(1, window.devicePixelRatio || 1); }
@@ -511,6 +521,51 @@
       eb.style.display = "none";
       activeIsNew = false;
     }
+    function toast(msg){
+      const t = ui.toast; t.textContent = msg||"Saved"; t.classList.add("show");
+      clearTimeout(t._timer); t._timer = setTimeout(function(){ t.classList.remove("show"); }, 900);
+    }
+    function getEditorLines(){
+      return ui.inlineEditor.textContent.replace(/\r/g,'').split("\n");
+    }
+    function commitEditorToActive(opts){
+      opts = opts || {};
+      var showToast = (opts.showToast!==false);
+      if(!activeText) return;
+      const lines = getEditorLines();
+      const contentLen = lines.join("").trim().length;
+      if (contentLen===0){
+        const idx = texts.indexOf(activeText);
+        if (idx>-1) texts.splice(idx,1);
+        history.push({type:"text"});
+        redraw(); scheduleSave();
+        if(showToast) toast("Deleted");
+        return;
+      }
+      activeText.lines = lines;
+      clampTextIntoView(activeText, true);
+      redraw(); scheduleSave();
+      if(showToast) toast("Saved");
+    }
+
+    ui.inlineEditor.addEventListener('compositionstart', function(){ composing=true; });
+    ui.inlineEditor.addEventListener('compositionend', function(){ composing=false; commitEditorToActive(); });
+    ui.inlineEditor.addEventListener('input', function(){ if(!composing){ commitEditorToActive({showToast:false}); } });
+    ui.inlineEditor.addEventListener('blur', function(){
+      if(composing){ setTimeout(function(){ commitEditorToActive(); }, 200); }
+      else{ commitEditorToActive(); }
+      hideEditor();
+      typing=false;
+    });
+    ui.ebDone.addEventListener('click', function(){ commitEditorToActive(); hideEditor(); typing=false; });
+    ui.ebCancel.addEventListener('click', function(){
+      if(activeIsNew && activeText){
+        const idx = texts.indexOf(activeText);
+        if (idx>-1) texts.splice(idx,1);
+        redraw(); scheduleSave();
+      }
+      hideEditor(); typing=false; activeText=null; activeIsNew=false;
+    });
 
     /* ================= Clamp + edge glow ================= */
     function clampTextIntoView(t, showGlow){
@@ -560,16 +615,14 @@
       redraw();
     }
 
-    /* ================= Redraw (mobile-safe skip rule) ================= */
+    /* ================= Redraw ================= */
     function redraw(){
       ctx.clearRect(0,0,ink.width,ink.height);
       for(var i=0;i<strokes.length;i++){ var s=strokes[i]; drawPath(s.points,s.color,s.base,s.smooth); }
       if(current) drawPath(current.points,current.color,current.base,current.smooth);
-
-      var editorIsEditing = (ui.inlineEditor.style.display === 'block' && document.activeElement === ui.inlineEditor);
       for(var j=0;j<texts.length;j++){
         var t=texts[j];
-        if(editorIsEditing && activeText && t===activeText) continue; // skip only while truly editing
+        if(typing && activeText && t===activeText && ui.inlineEditor.style.display==='block') continue;
         drawTextObject(t);
       }
     }
@@ -594,64 +647,11 @@
       if(!on){
         if(activeText){ commitEditorToActive(); }
         hideEditor(); typing=false; activeText=null; activeIsNew=false;
-        // repaint immediately (covers mobile viewport churn)
-        requestAnimationFrame(function(){ requestAnimationFrame(redraw); });
-        setTimeout(redraw, 0);
-        debouncedResizeAll();
+        redraw(); debouncedResizeAll();
       }
     }
     ui.segDraw.addEventListener('click', function(){ setTypeMode(false); });
     ui.segType.addEventListener('click', function(){ setTypeMode(true); });
-
-    /* ================= Commit (no toasts) ================= */
-    function getEditorLines(){ return ui.inlineEditor.textContent.replace(/\r/g,'').split("\n"); }
-    function commitEditorToActive(){
-      if(!activeText) return;
-      const lines = getEditorLines();
-      const contentLen = lines.join("").trim().length;
-      if (contentLen===0){
-        const idx = texts.indexOf(activeText);
-        if (idx>-1) texts.splice(idx,1);
-        history.push({type:"text"});
-        clampTextIntoView(activeText, false);
-        redraw(); scheduleSave();
-        return;
-      }
-      activeText.lines = lines;
-      clampTextIntoView(activeText, true);
-      redraw(); scheduleSave();
-    }
-
-    ui.inlineEditor.addEventListener('compositionstart', function(){ composing=true; });
-    ui.inlineEditor.addEventListener('compositionend', function(){ composing=false; commitEditorToActive(); });
-    ui.inlineEditor.addEventListener('input', function(){ if(!composing){ commitEditorToActive(); } });
-    ui.inlineEditor.addEventListener('blur', function(){
-      if(composing){ setTimeout(function(){ commitEditorToActive(); }, 200); }
-      else{ commitEditorToActive(); }
-      typing=false;
-      hideEditor();
-      // repaint immediately (prevents the one-frame “invisible” blink on mobile)
-      requestAnimationFrame(function(){ requestAnimationFrame(redraw); });
-      setTimeout(redraw, 0);
-    });
-    ui.ebDone.addEventListener('click', function(){
-      commitEditorToActive();
-      typing=false;
-      hideEditor();
-      requestAnimationFrame(function(){ requestAnimationFrame(redraw); });
-      setTimeout(redraw, 0);
-    });
-    ui.ebCancel.addEventListener('click', function(){
-      if(activeIsNew && activeText){
-        const idx = texts.indexOf(activeText);
-        if (idx>-1) texts.splice(idx,1);
-        redraw(); scheduleSave();
-      }
-      typing=false; activeText=null; activeIsNew=false;
-      hideEditor();
-      requestAnimationFrame(function(){ requestAnimationFrame(redraw); });
-      setTimeout(redraw, 0);
-    });
 
     /* ================= Drawing (non-passive) ================= */
     function startStroke(e){
@@ -659,7 +659,6 @@
       if (ui.inlineEditor.style.display==='block'){
         if(activeText){ commitEditorToActive(); }
         hideEditor(); typing=false; activeText=null; activeIsNew=false;
-        requestAnimationFrame(function(){ requestAnimationFrame(redraw); });
       }
       isDrawing=true;
       current={points:[],color:"#0c1e16",base:parseFloat(ui.thick.value||ui.thick2.value),smooth:parseFloat(ui.smooth.value||ui.smooth2.value)};
@@ -677,17 +676,17 @@
     }
 
     /* ================= Drag to move (text) ================= */
-    let drag=null, pressTimer=null, pointerDown=false, pointerStart=null;
-    const LONGPRESS_MS=250, MOVE_THRESHOLD=6;
-    function startDrag(pt, hit){
+    function startDrag(pt, hit, pointerType){
       drag = { t:hit.t, dx: pt.x - hit.t.x, dy: pt.y - hit.t.y, active:true };
+      // hide editor while dragging
       if (ui.inlineEditor.style.display==='block'){ hideEditor(); typing=false; }
     }
     function updateDrag(pt){
       if(!drag || !drag.active) return;
+      // grid snap to dot spacing (20px)
       var nx = pt.x - drag.dx;
       var ny = pt.y - drag.dy;
-      var gap = 20 * dpr; // grid snap
+      var gap = 20 * dpr;
       nx = Math.round(nx / gap) * gap;
       ny = Math.round(ny / gap) * gap;
       drag.t.x = nx; drag.t.y = ny;
@@ -778,21 +777,26 @@
       pointerStart = {x:pt.x, y:pt.y, clientX:e.clientX, clientY:e.clientY};
       const hit = textAtPoint(pt.x, pt.y);
 
+      // If touching a text block: prep drag; mouse starts immediately, touch waits for long-press
       if (hit){
         e.preventDefault();
+        // Cancel any active editor (we're moving)
+        if (ui.inlineEditor.style.display==='block'){ hideEditor(); typing=false; }
+
         if (e.pointerType === "mouse" || e.pointerType === "pen"){
-          startDrag(pt, hit);
+          startDrag(pt, hit, e.pointerType);
         } else {
           clearTimeout(pressTimer);
           pressTimer = setTimeout(function(){
             if (pointerDown && !isDrawing && (!drag || !drag.active)){
-              startDrag(pt, hit);
+              startDrag(pt, hit, e.pointerType);
             }
           }, LONGPRESS_MS);
         }
         return;
       }
 
+      // Not on a text block
       if (typeMode){
         startTypingAt(e);
         return;
@@ -802,6 +806,7 @@
 
     ink.addEventListener("pointermove", function(e){
       const pt = toCanvasCoords(e);
+      // If moving before long-press fired on touch, cancel long-press if user slides away too far
       if (pressTimer && pointerStart){
         const dx = Math.abs(e.clientX - pointerStart.clientX);
         const dy = Math.abs(e.clientY - pointerStart.clientY);
