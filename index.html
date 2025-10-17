@@ -118,15 +118,15 @@
   .popover .line{height:1px;background:rgba(0,0,0,.08);margin:8px 0}
 
   /* Collapse chevron */
-  .collapse-btn{margin-left:auto} /* push to the right edge of current row */
+  .collapse-btn{margin-left:auto}
   .collapse-btn .chev{display:inline-block; transition:transform .18s ease}
-  .toolbar.collapsed .collapse-btn .chev{transform:rotate(180deg)} /* ▲ -> ▼ effect */
+  .toolbar.collapsed .collapse-btn .chev{transform:rotate(180deg)} /* ▲ -> ▼ */
 
   /* Canvas layers */
   canvas#grid,canvas#ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   canvas#grid{z-index:0} canvas#ink{z-index:1}
 
-  /* Perforation line (just for look; toolbar can flow over it now) */
+  /* Perforation (visual only) */
   .tear-overlay{
     pointer-events:none;position:absolute;left:0;right:0;top:58px;height:14px;z-index:2;
     background:repeating-linear-gradient(90deg,transparent 0 16px,var(--perforation) 16px 18px),
@@ -202,14 +202,14 @@
     <!-- Collapsed-only: more (popover) -->
     <button class="btn secondary icon only more" id="moreBtn" aria-haspopup="true" aria-expanded="false" title="More">⋯</button>
 
-    <!-- Collapse chevron (right aligned in its row) -->
+    <!-- Collapse chevron -->
     <button class="btn secondary icon only collapse-btn" id="collapseBtn" aria-expanded="false" title="Collapse/Expand toolbar">
       <span class="chev">▲</span>
     </button>
 
     <span class="hint">Default draw • Toggle Type to enter typing • Undo reverses last • <b>Tear Off saves your note</b></span>
 
-    <!-- Popover for advanced controls (shown in collapsed mode) -->
+    <!-- Popover for advanced controls (collapsed mode) -->
     <div class="popover" id="popover" role="dialog" aria-label="More controls">
       <div class="row">
         <button class="btn secondary" id="clear2" style="width:100%">New Page</button>
@@ -345,6 +345,56 @@
   let caretVisible=true, caretTimer=null;
   let dragInfo=null;
 
+  /* ================= Autosave / Restore ================= */
+  const SAVE_KEY='pad.state.v1';
+  let saveTimer=null, dirty=false;
+  function serialize(){
+    // Keep it light: round floats a bit
+    const rs=(n)=>Math.round(n*100)/100;
+    return JSON.stringify({
+      strokes: strokes.map(s=>({
+        base:s.base, smooth:s.smooth, color:s.color,
+        points: s.points.map(p=>({x:rs(p.x),y:rs(p.y),t:rs(p.t),p:rs(p.p)}))
+      })),
+      texts: texts.map(t=>({
+        x:rs(t.x), y:rs(t.y), lines:[...t.lines], font:t.font||"", size:t.size|0
+      }))
+    });
+  }
+  function deserialize(json){
+    try{
+      const obj=JSON.parse(json);
+      if(!obj || !Array.isArray(obj.strokes) || !Array.isArray(obj.texts)) return false;
+      strokes = obj.strokes.map(s=>({
+        base:+s.base||3, smooth:+s.smooth||0.5, color:s.color||"#0c1e16",
+        points: Array.isArray(s.points)? s.points.map(p=>({x:+p.x,y:+p.y,t:+p.t,p:+p.p||.3})) : []
+      }));
+      texts = obj.texts.map(t=>({
+        x:+t.x||0, y:+t.y||0, lines:Array.isArray(t.lines)? t.lines.map(String) : [""],
+        font:String(t.font||""), size:+t.size||20
+      }));
+      history=[]; current=null; activeText=null; typing=false;
+      redraw();
+      return true;
+    }catch(_){ return false; }
+  }
+  function scheduleSave(){
+    dirty=true;
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(()=>{ if(dirty){ localStorage.setItem(SAVE_KEY, serialize()); dirty=false; } }, 600);
+  }
+  function hardSave(){ localStorage.setItem(SAVE_KEY, serialize()); dirty=false; }
+
+  // Save on important events
+  window.addEventListener('beforeunload', hardSave);
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState!=='visible') hardSave(); });
+
+  // Attempt restore on load (only if something exists)
+  (function tryRestore(){
+    const data=localStorage.getItem(SAVE_KEY);
+    if(data) deserialize(data); // silent restore
+  })();
+
   /* ================= Coords & pen ================= */
   function toCanvasCoords(e){
     const r=ink.getBoundingClientRect();
@@ -427,7 +477,7 @@
       dragInfo={text:hit.t, dx:x-hit.t.x, dy:y-hit.t.y, dragging:false};
     }else{
       const t={ x,y, lines:[""], font:(ui.fontSel.value||ui.fontSel2.value||""), size:parseInt(ui.fontSize.value||ui.fontSize2.value,10)||20 };
-      texts.push(t); history.push({type:"text"});
+      texts.push(t); history.push({type:"text"}); scheduleSave();
       activeText=t; typing=true;
       dragInfo={text:t, dx:0, dy:0, dragging:false};
     }
@@ -444,33 +494,37 @@
     if(dragInfo.dragging){
       dragInfo.text.x=x-dragInfo.dx;
       dragInfo.text.y=y-dragInfo.dy;
-      redraw();
+      redraw(); scheduleSave();
     }
   }
   function endTypingPointer(){ dragInfo=null; }
   function handleKey(e){
     if(e.key==="Escape"){ if(typeMode){ setTypeMode(false); } return; }
     if(!typeMode || !activeText) return;
-    if(e.key==="Enter"){ e.preventDefault(); activeText.lines.push(""); redraw(); return; }
+    if(e.key==="Enter"){ e.preventDefault(); activeText.lines.push(""); redraw(); scheduleSave(); return; }
     if(e.key==="Backspace"){
       e.preventDefault();
       const line=activeText.lines.at(-1)||"";
       if(line.length>0) activeText.lines[activeText.lines.length-1]=line.slice(0,-1);
       else if(activeText.lines.length>1) activeText.lines.pop();
-      redraw(); return;
+      redraw(); scheduleSave(); return;
     }
     if(e.key.length===1){
       activeText.lines[activeText.lines.length-1]+=e.key;
-      redraw(); return;
+      redraw(); scheduleSave(); return;
     }
   }
   function startCaretBlink(){ stopCaretBlink(); caretVisible=true; caretTimer=setInterval(()=>{ caretVisible=!caretVisible; redraw(); },500); }
   function stopCaretBlink(){ if(caretTimer){ clearInterval(caretTimer); caretTimer=null; } caretVisible=true; }
 
   /* ================= Draw interactions ================= */
-  function startStroke(e){ isDrawing=true; current={points:[],color:"#0c1e16",base:parseFloat(ui.thick.value||ui.thick2.value),smooth:parseFloat(ui.smooth.value||ui.smooth2.value)}; current.points.push(toCanvasCoords(e)); }
+  function startStroke(e){
+    isDrawing=true;
+    current={points:[],color:"#0c1e16",base:parseFloat(ui.thick.value||ui.thick2.value),smooth:parseFloat(ui.smooth.value||ui.smooth2.value)};
+    current.points.push(toCanvasCoords(e));
+  }
   function extendStroke(e){ if(!isDrawing||!current) return; current.points.push(toCanvasCoords(e)); redraw(); }
-  function endStroke(){ if(!isDrawing||!current) return; strokes.push(current); history.push({type:"stroke"}); current=null; isDrawing=false; redraw(); }
+  function endStroke(){ if(!isDrawing||!current) return; strokes.push(current); history.push({type:"stroke"}); current=null; isDrawing=false; redraw(); scheduleSave(); }
 
   /* ================= Redraw ================= */
   function redraw(){
@@ -500,7 +554,6 @@
     if(open){
       ui.popover.classList.add('open');
       ui.moreBtn.setAttribute('aria-expanded','true');
-      const tbRect = toolbar.getBoundingClientRect();
       ui.popover.style.right = '8px';
     }else{
       closePopover();
@@ -516,7 +569,7 @@
     setCollapsed(!collapsed);
   });
 
-  // Initial collapsed state (persisted; default collapsed on tablets)
+  // Initial collapsed state
   (function initCollapsed(){
     const saved = localStorage.getItem('pad.collapsed');
     const preferCollapsed = saved != null ? saved === '1'
@@ -551,21 +604,21 @@
   /* ================= Buttons ================= */
   function doUndo(){
     const last=history.pop();
-    if(last){ if(last.type==="stroke") strokes.pop(); else if(last.type==="text") texts.pop(); redraw(); }
+    if(last){ if(last.type==="stroke") strokes.pop(); else if(last.type==="text") texts.pop(); redraw(); scheduleSave(); }
   }
   ui.undoBtn.addEventListener("click", doUndo);
 
   // New Page in both places
   function newPage(){
     strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink();
-    redraw(); flashPerforation();
+    redraw(); flashPerforation(); scheduleSave();
   }
   if(ui.clear) ui.clear.addEventListener("click", newPage);
   if(ui.clear2) ui.clear2.addEventListener("click", ()=>{ newPage(); closePopover(); });
 
   // Sync duplicate controls in popover and toolbar
-  function syncFont(from, to){ to.value = from.value; if(activeText){ activeText.font = to.value || ""; redraw(); } }
-  function syncSize(from, to){ to.value = from.value; if(activeText){ activeText.size = Math.max(8, parseInt(to.value,10)||20); redraw(); } }
+  function syncFont(from, to){ to.value = from.value; if(activeText){ activeText.font = to.value || ""; redraw(); scheduleSave(); } }
+  function syncSize(from, to){ to.value = from.value; if(activeText){ activeText.size = Math.max(8, parseInt(to.value,10)||20); redraw(); scheduleSave(); } }
   function syncRange(from, to, key){
     to.value = from.value;
     if(current) current[key] = parseFloat(to.value);
@@ -597,7 +650,7 @@
 
   /* ================= Keyboard ================= */
   window.addEventListener("keydown",e=>{
-    if(e.key.toLowerCase()==="u"){ doUndo(); return; }
+    // Removed: 'u' keyboard shortcut for Undo to avoid accidental triggers while typing
     handleKey(e);
   });
 
@@ -621,7 +674,7 @@
       URL.revokeObjectURL(a.href); a.remove();
     },"image/png");
     flashPerforation();
-    setTimeout(()=>{ strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink(); redraw(); }, 380);
+    setTimeout(()=>{ strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink(); redraw(); scheduleSave(); }, 380);
   });
 
   /* ================= Init ================= */
