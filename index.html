@@ -9,91 +9,91 @@
 <title>Scribble Note — Pen & Pad</title>
 <style>
   :root{
-    --paper:#f4fff7;          /* light engineering pad tint */
-    --dots:#7aa68a;           /* dot color */
-    --ui:#0e2b1f;             /* UI text */
-    --ui-muted:#5c7a6a;       /* subtle UI */
-    --accent:#1aa36f;         /* buttons */
+    --paper:#f4fff7;
+    --dots:#7aa68a;
+    --ui:#0e2b1f;
+    --ui-muted:#5c7a6a;
+
+    --accent:#1aa36f;
     --accent-2:#0d8157;
+
+    --tear:#e9752a;           /* burnt orange */
+    --tear-pressed:#c7611f;
+
     --shadow:rgba(0,0,0,.25);
     --perforation:#d2e8db;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
   body{
-    min-height:100svh;        /* mobile-safe viewport height */
+    min-height:100svh;
     background:var(--paper);
     color:var(--ui);
-    font-family:system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
   }
-  .wrap{
-    position:relative;
-    width:100%;
-    min-height:100svh;
-    height:100%;
-    overflow:hidden;
-  }
+  .wrap{position:relative;width:100%;min-height:100svh;height:100%;overflow:hidden}
 
-  /* Toolbar */
   .toolbar{
-    position:absolute; top:12px; left:50%; transform:translateX(-50%);
-    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
-    padding:8px 12px; background:rgba(255,255,255,.7);
+    position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    padding:8px 12px;background:rgba(255,255,255,.7);
     backdrop-filter:saturate(1.2) blur(6px);
-    border:1px solid rgba(0,0,0,.08); border-radius:14px;
-    box-shadow:0 6px 18px var(--shadow); z-index:3; user-select:none;
+    border:1px solid rgba(0,0,0,.08);border-radius:14px;
+    box-shadow:0 6px 18px var(--shadow);z-index:3;user-select:none;
   }
-  .title{font-weight:600; letter-spacing:.2px; margin-right:8px; color:var(--ui)}
+  .title{font-weight:600;margin-right:8px}
   .btn{
-    appearance:none; border:0; outline:0; cursor:pointer;
-    padding:8px 12px; border-radius:12px;
-    background:var(--accent); color:white; font-weight:600;
-    transition:transform .05s ease, background .15s ease;
+    appearance:none;border:0;outline:0;cursor:pointer;
+    padding:8px 12px;border-radius:12px;font-weight:600;
+    transition:transform .05s ease,background .15s ease,box-shadow .15s ease;
   }
-  .btn:active{ transform:translateY(1px) }
-  .btn.secondary{ background:transparent; color:var(--ui); border:1px solid rgba(0,0,0,.12) }
-  .btn:hover{ background:var(--accent-2) }
-  .btn.toggle.active{ box-shadow: inset 0 0 0 2px rgba(255,255,255,.9) }
-  .control{display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--ui)}
-  .select, .range, .number{
-    padding:6px 8px; border-radius:10px; border:1px solid rgba(0,0,0,.12); background:rgba(255,255,255,.8)
+  .btn:active{transform:translateY(1px)}
+  .btn.tear{background:var(--tear);color:#fff}
+  .btn.tear:active{background:var(--tear-pressed)}
+  .btn.secondary{
+    background:transparent;color:var(--ui);
+    border:1px solid rgba(0,0,0,.12);
   }
-  input[type="range"]{ accent-color:var(--accent) }
-  label{ color:var(--ui-muted) }
-  .hint{ font-size:.85rem; color:var(--ui-muted) }
+  .btn.secondary:hover{background:rgba(0,0,0,.04)}
+  .btn.secondary:active{background:rgba(0,0,0,.08)}
+  .btn.toggle.active{
+    background:rgba(0,0,0,.04);
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,.12);
+  }
+  .btn.toggle.active:active{background:rgba(0,0,0,.08)}
 
-  /* Canvases */
-  canvas#grid, canvas#ink{
-    position:absolute; inset:0; width:100%; height:100%;
-    touch-action:none; /* allow drawing on touch */
+  .control{display:flex;align-items:center;gap:8px;font-size:.9rem}
+  .select,.range,.number{
+    padding:6px 8px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.8)
   }
-  canvas#grid{ z-index:0 }
-  canvas#ink{ z-index:1 }
+  input[type=range]{accent-color:var(--accent)}
+  label{color:var(--ui-muted)}
+  .hint{font-size:.85rem;color:var(--ui-muted)}
 
-  /* Perforation & tear animation overlay */
+  canvas#grid,canvas#ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+  canvas#grid{z-index:0}canvas#ink{z-index:1}
+
   .tear-overlay{
-    pointer-events:none; position:absolute; left:0; right:0; top:58px; height:14px; z-index:2;
-    background:
-      repeating-linear-gradient(90deg, transparent 0 16px, var(--perforation) 16px 18px),
-      linear-gradient(var(--perforation), var(--perforation));
-    background-size:auto 2px, 100% 2px; background-repeat:no-repeat; background-position:0 6px, 0 6px; opacity:.9;
+    pointer-events:none;position:absolute;left:0;right:0;top:58px;height:14px;z-index:2;
+    background:repeating-linear-gradient(90deg,transparent 0 16px,var(--perforation) 16px 18px),
+               linear-gradient(var(--perforation),var(--perforation));
+    background-size:auto 2px,100% 2px;background-position:0 6px;opacity:.9;
   }
-  .page{ position:absolute; inset:0; background:transparent; z-index:2; transform-origin: top center; pointer-events:none; }
-  .page.tearing{ animation:tearAway .7s ease-in forwards; }
+  .page{position:absolute;inset:0;background:transparent;z-index:2;transform-origin:top center;pointer-events:none}
+  .page.tearing{animation:tearAway .7s ease-in forwards}
   @keyframes tearAway{
-    0% { transform:translateY(0) rotate(0); filter:drop-shadow(0 12px 18px var(--shadow)); }
-    30%{ transform:translateY(6px) rotate(-0.3deg) }
-    100%{ transform:translateY(-110%) rotate(-2deg); opacity:0 }
+    0%{transform:translateY(0) rotate(0);filter:drop-shadow(0 12px 18px var(--shadow))}
+    30%{transform:translateY(6px) rotate(-.3deg)}
+    100%{transform:translateY(-110%) rotate(-2deg);opacity:0}
   }
 
   .badge{
-    position:absolute; right:10px; bottom:10px; z-index:3;
-    font-size:.75rem; color:var(--ui-muted); background:rgba(255,255,255,.5);
-    border:1px solid rgba(0,0,0,.08); padding:6px 8px; border-radius:10px;
-    backdrop-filter:blur(4px);
+    position:absolute;right:10px;bottom:10px;z-index:3;
+    font-size:.75rem;color:var(--ui-muted);background:rgba(255,255,255,.5);
+    border:1px solid rgba(0,0,0,.08);padding:6px 8px;border-radius:10px;backdrop-filter:blur(4px);
   }
 
-  /* Minimal status dot so you can confirm render if things go wrong */
+  /* tiny status dot (optional) */
   .status{position:fixed;left:8px;bottom:8px;width:10px;height:10px;border-radius:50%;background:#bbb;z-index:4}
   .status.ok{background:#24c768}
 </style>
@@ -102,209 +102,187 @@
 <div class="wrap">
   <div class="toolbar">
     <span class="title">Scribble Note</span>
-    <button class="btn" id="tear">Tear Off</button>
+    <button class="btn tear" id="tear">Tear Off</button>
     <button class="btn secondary" id="clear">New Page</button>
-
-    <!-- Type mode is ONLY toggled by this button -->
-    <button class="btn toggle" id="typeToggle" title="Click to enter/exit Type mode">Type</button>
+    <button class="btn secondary" id="undoBtn">Undo</button>
+    <!-- True toggle: label switches between Type and Draw -->
+    <button class="btn secondary toggle" id="typeToggle" aria-pressed="false">Type</button>
+    <button class="btn secondary" id="escBtn">Esc</button>
 
     <div class="control">
       <label for="fontSel">Font</label>
       <select id="fontSel" class="select">
-        <option value="system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif">Sans</option>
-        <option value="ui-rounded, ui-script, 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive">Cursive</option>
-        <option value="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">Mono</option>
+        <option value="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif">Sans</option>
+        <option value="ui-rounded,ui-script,'Segoe Print','Bradley Hand','Comic Sans MS',cursive">Cursive</option>
+        <option value="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace">Mono</option>
       </select>
     </div>
     <div class="control">
       <label for="fontSize">Size</label>
-      <input id="fontSize" class="number" type="number" min="10" max="72" step="1" value="20" style="width:70px" />
+      <input id="fontSize" class="number" type="number" min="10" max="72" step="1" value="20" style="width:70px"/>
     </div>
-
     <div class="control">
       <label for="thick">Pen</label>
-      <input id="thick" class="range" type="range" min="1" max="6" value="3" step="0.5" />
+      <input id="thick" class="range" type="range" min="1" max="6" value="3" step="0.5"/>
     </div>
     <div class="control">
       <label for="smooth">Smooth</label>
-      <input id="smooth" class="range" type="range" min="0" max="1" value="0.5" step="0.05" />
+      <input id="smooth" class="range" type="range" min="0" max="1" value="0.5" step="0.05"/>
     </div>
-
-    <span class="hint">Default: draw. Click <b>Type</b> to type. <b>U</b> undo. <b>Esc</b> exits Type.</span>
+    <span class="hint">Default draw • Toggle Type to enter typing • Undo / Esc buttons included</span>
   </div>
 
-  <div class="tear-overlay" aria-hidden="true"></div>
-  <div class="page" id="pageAnim" aria-hidden="true"></div>
+  <div class="tear-overlay"></div>
+  <div class="page" id="pageAnim"></div>
 
   <canvas id="grid"></canvas>
   <canvas id="ink"></canvas>
-
   <div class="badge">Dotted engineering paper • ink + typed text</div>
 </div>
-<div id="status" class="status" title="Render status"></div>
+<div id="status" class="status"></div>
 
 <script>
 (()=>{
-  /* ===================== Core setup ===================== */
-  const statusEl = document.getElementById('status');
-  const markOK = ()=> statusEl.classList.add('ok');
+  /* ===== Core setup ===== */
+  const statusEl=document.getElementById("status");
+  const markOK=()=>statusEl.classList.add("ok");
 
-  const grid = document.getElementById('grid');
-  const ink = document.getElementById('ink');
-  const gtx = grid.getContext('2d');
-  const ctx = ink.getContext('2d');
-  ctx.lineCap='round'; ctx.lineJoin='round';
+  const grid=document.getElementById("grid");
+  const ink=document.getElementById("ink");
+  const gtx=grid.getContext("2d");
+  const ctx=ink.getContext("2d");
+  ctx.lineCap="round";ctx.lineJoin="round";
 
-  // DPR handling (lock while typing)
-  function getDPR(){ return Math.max(1, window.devicePixelRatio || 1); }
-  let dpr = getDPR();
+  function getDPR(){return Math.max(1,window.devicePixelRatio||1)}
+  let dpr=getDPR();
 
-  const ui = {
-    tear: document.getElementById('tear'),
-    clear: document.getElementById('clear'),
-    thick: document.getElementById('thick'),
-    smooth: document.getElementById('smooth'),
-    typeToggle: document.getElementById('typeToggle'),
-    fontSel: document.getElementById('fontSel'),
-    fontSize: document.getElementById('fontSize'),
-    pageAnim: document.getElementById('pageAnim')
+  const ui={
+    tear:document.getElementById("tear"),
+    clear:document.getElementById("clear"),
+    undoBtn:document.getElementById("undoBtn"),
+    typeToggle:document.getElementById("typeToggle"),
+    escBtn:document.getElementById("escBtn"),
+    thick:document.getElementById("thick"),
+    smooth:document.getElementById("smooth"),
+    fontSel:document.getElementById("fontSel"),
+    fontSize:document.getElementById("fontSize"),
+    pageAnim:document.getElementById("pageAnim"),
   };
 
-  /* ===================== Resize control ===================== */
-  let suspendResize = false;     // freeze while typing to avoid keyboard-induced clears
-  let resizeTimer = null;
-  const DEBOUNCE_MS = 180;
+  /* ===== Resize & layout stability ===== */
+  let suspendResize=false;
+  let resizeTimer=null;
+  const DEBOUNCE_MS=180;
 
   function debouncedResizeAll(){
-    if (suspendResize) return;
+    if(suspendResize) return;
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(()=> { resizeAll(); }, DEBOUNCE_MS);
+    resizeTimer=setTimeout(resizeAll,DEBOUNCE_MS);
   }
-
   function sizeCanvas(c){
-    const rect = c.getBoundingClientRect();
-    let w = Math.round(rect.width * dpr);
-    let h = Math.round(rect.height * dpr);
-    if (w < 2 || h < 2){ // fallback if layout not ready
-      w = Math.round(window.innerWidth * dpr);
-      h = Math.round(window.innerHeight * dpr);
-    }
-    c.width = w; c.height = h;
+    const r=c.getBoundingClientRect();
+    let w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);
+    if(w<2||h<2){ w=Math.round(innerWidth*dpr); h=Math.round(innerHeight*dpr); }
+    c.width=w; c.height=h;
   }
-
   function resizeAll(){
-    dpr = getDPR();                 // only updated when not suspended
+    dpr=getDPR();
     sizeCanvas(grid); sizeCanvas(ink);
     drawGrid(); redraw();
     markOK();
   }
+  window.addEventListener("resize",debouncedResizeAll,{passive:true});
+  window.addEventListener("load",()=>{ requestAnimationFrame(()=>{ resizeAll(); requestAnimationFrame(resizeAll); }); });
+  new ResizeObserver(()=>debouncedResizeAll()).observe(document.body);
 
-  window.addEventListener('resize', debouncedResizeAll, {passive:true});
-  window.addEventListener('load', ()=>{
-    // double-pass helps iOS Safari + some Android WebViews
-    requestAnimationFrame(()=>{ resizeAll(); requestAnimationFrame(resizeAll); });
-  });
-  new ResizeObserver(()=> debouncedResizeAll()).observe(document.body);
-
-  /* ===================== Grid ===================== */
+  /* ===== Grid ===== */
   function drawGrid(){
-    const {width:w,height:h} = grid;
+    const {width:w,height:h}=grid;
     gtx.clearRect(0,0,w,h);
-    // paper
-    gtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--paper') || '#f4fff7';
+    gtx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--paper")||"#f4fff7";
     gtx.fillRect(0,0,w,h);
-    // dots
-    const gap = 20 * dpr;
-    const r = 0.85 * dpr;
-    gtx.fillStyle = 'rgba(122,166,138,.65)';
-    for(let y=gap/2; y<h; y+=gap){
-      for(let x=gap/2; x<w; x+=gap){
+    const gap=20*dpr, r=.85*dpr;
+    gtx.fillStyle="rgba(122,166,138,.65)";
+    for(let y=gap/2;y<h;y+=gap){
+      for(let x=gap/2;x<w;x+=gap){
         gtx.beginPath(); gtx.arc(x,y,r,0,Math.PI*2); gtx.fill();
       }
     }
   }
 
-  /* ===================== State ===================== */
-  let strokes = [];    // {points:[{x,y,t,p}], color, base, smooth}
-  let texts = [];      // {x,y,lines:[...], font, size}
-  let history = [];    // {type:'stroke'|'text'}
+  /* ===== State ===== */
+  let strokes=[];    // {points:[{x,y,t,p}], color, base, smooth}
+  let texts=[];      // {x,y,lines:[...], font, size}
+  let history=[];    // {type:'stroke'|'text'}
 
-  // Drawing state
   let isDrawing=false, current=null;
-
-  // Type state (defaults OFF)
-  let typeMode=false;
+  let typeMode=false;          // default to drawing on load
   let typing=false, activeText=null;
   let caretVisible=true, caretTimer=null;
   let dragInfo=null; // {text, dx, dy, dragging}
 
-  /* ===================== Coords ===================== */
-  function toCanvasCoords(evt, target=ink){
-    const rect = target.getBoundingClientRect();
-    const x = (evt.clientX - rect.left) * dpr;
-    const y = (evt.clientY - rect.top) * dpr;
-    const p = typeof evt.pressure==='number' && evt.pressure>0 ? evt.pressure : 0.3;
+  /* ===== Utils ===== */
+  function toCanvasCoords(e){
+    const r=ink.getBoundingClientRect();
+    const x=(e.clientX-r.left)*dpr, y=(e.clientY-r.top)*dpr;
+    const p=(typeof e.pressure==="number" && e.pressure>0)? e.pressure : .3;
     return {x,y,p,t:performance.now()};
   }
 
-  /* ===================== Pen smoothing ===================== */
-  function strokeWidth(i, pts, base){
-    const p = pts[i], prev = pts[i-1] || p;
-    const dx = p.x - prev.x, dy = p.y - prev.y;
-    const dt = Math.max(0.1, (p.t - prev.t));
-    const v = Math.hypot(dx,dy)/dt; // px/ms
-    const min=0.6, max=2.2;
-    const pressureBoost = (p.p>0.05) ? (0.5 + p.p*0.9) : 1;
-    return base * (min + (max-min)*(1/(1+v*14))) * pressureBoost;
+  /* ===== Pen smoothing ===== */
+  function strokeWidth(i,pts,base){
+    const p=pts[i], prev=pts[i-1]||p;
+    const dx=p.x-prev.x, dy=p.y-prev.y, dt=Math.max(.1,(p.t-prev.t));
+    const v=Math.hypot(dx,dy)/dt;
+    const min=.6,max=2.2;
+    const pressure=(p.p>.05)? (.5+p.p*.9) : 1;
+    return base*(min+(max-min)*(1/(1+v*14)))*pressure;
   }
-  function drawPath(pts, color, base, smooth){
+  function drawPath(pts,color,base,smooth){
     if(pts.length<2) return;
     ctx.save(); ctx.strokeStyle=color; ctx.beginPath();
-    const lerp=(a,b,t)=>a+(b-a)*t;
-    const mpt=(a,b,s)=>({x:lerp(a.x,b.x,s), y:lerp(a.y,b.y,s), p:lerp(a.p,b.p,s), t:lerp(a.t,b.t,s)});
+    const L=(a,b,t)=>a+(b-a)*t;
+    const midpt=(a,b,s)=>({x:L(a.x,b.x,s), y:L(a.y,b.y,s), p:L(a.p,b.p,s), t:L(a.t,b.t,s)});
     let p0=pts[0]; ctx.moveTo(p0.x,p0.y);
     for(let i=1;i<pts.length;i++){
-      const p1=pts[i], mid=mpt(p0,p1, 0.5 + (smooth-0.5)*0.6);
-      ctx.lineWidth = strokeWidth(i, pts, base*dpr);
-      ctx.quadraticCurveTo(p0.x,p0.y, mid.x,mid.y);
+      const p1=pts[i], m=midpt(p0,p1,.5+(smooth-.5)*.6);
+      ctx.lineWidth=strokeWidth(i,pts,base*dpr);
+      ctx.quadraticCurveTo(p0.x,p0.y,m.x,m.y);
       p0=p1;
     }
     ctx.stroke(); ctx.restore();
   }
 
-  /* ===================== Text rendering ===================== */
+  /* ===== Text rendering ===== */
   function setCanvasFont(font,sizePx){
-    const DEFAULT_STACK = "system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif";
-    const stack = (typeof font === 'string' && font.trim().length) ? font : DEFAULT_STACK;
-    const px = Math.max(8, sizePx|0);      // prevent 0/NaN/too-small
-    ctx.font = `${(px * dpr)}px ${stack}`;
-    ctx.textBaseline='alphabetic';
-    ctx.fillStyle='#0c1e16';
+    const DEF="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
+    const stack=(typeof font==="string" && font.trim().length)? font : DEF;
+    const px=Math.max(8, sizePx|0);
+    ctx.font=`${px*dpr}px ${stack}`;
+    ctx.textBaseline="alphabetic";
+    ctx.fillStyle="#0c1e16";
   }
   function drawTextObject(t){
-    if (!t || !Array.isArray(t.lines)) return;
-    if (t.lines.length === 0) t.lines = [''];
-    setCanvasFont(t.font, t.size);
-    const lineH = Math.round(t.size * 1.35) * dpr;
-    let y = t.y;
-    for(const line of t.lines){
-      ctx.fillText(line, t.x, y);
-      y += lineH;
-    }
+    if(!t || !Array.isArray(t.lines)) return;
+    if(t.lines.length===0) t.lines=[""];
+    setCanvasFont(t.font,t.size);
+    const lineH=Math.round(t.size*1.35)*dpr;
+    let y=t.y;
+    for(const line of t.lines){ ctx.fillText(line,t.x,y); y+=lineH; }
   }
   function drawCaretFor(t){
     if(!typing || !caretVisible || t!==activeText) return;
-    setCanvasFont(t.font, t.size);
-    const lineH = Math.round(t.size * 1.35) * dpr;
-    const lastLine = t.lines[t.lines.length-1] || '';
-    const x = t.x + ctx.measureText(lastLine).width + 2*dpr;
-    const yBase = t.y + (t.lines.length-1)*lineH;
+    setCanvasFont(t.font,t.size);
+    const lineH=Math.round(t.size*1.35)*dpr;
+    const last=t.lines[t.lines.length-1]||"";
+    const x=t.x+ctx.measureText(last).width+2*dpr;
+    const yBase=t.y+(t.lines.length-1)*lineH;
     ctx.save();
-    ctx.strokeStyle='rgba(12,30,22,.9)';
-    ctx.lineWidth = 1.5*dpr;
+    ctx.strokeStyle="rgba(12,30,22,.9)";
+    ctx.lineWidth=1.5*dpr;
     ctx.beginPath();
-    ctx.moveTo(x, yBase - (t.size*1.05*dpr));
-    ctx.lineTo(x, yBase + (t.size*0.25*dpr));
+    ctx.moveTo(x, yBase-(t.size*1.05*dpr));
+    ctx.lineTo(x, yBase+(t.size*.25*dpr));
     ctx.stroke();
     ctx.restore();
   }
@@ -312,208 +290,169 @@
     for(let i=texts.length-1;i>=0;i--){
       const t=texts[i];
       setCanvasFont(t.font,t.size);
-      const lineH = Math.round(t.size*1.35)*dpr;
-      const width = Math.max(...t.lines.map(l=>ctx.measureText(l).width), 20*dpr);
-      const height = Math.max(lineH*t.lines.length, lineH);
-      const left=t.x-4*dpr, top=t.y-(t.size*1.05*dpr);
-      if(x>=left && x<=left+width+8*dpr && y>=top && y<=top+height+6*dpr) return {t,i};
+      const lineH=Math.round(t.size*1.35)*dpr;
+      const w=Math.max(...t.lines.map(l=>ctx.measureText(l).width), 20*dpr);
+      const h=Math.max(lineH*t.lines.length, lineH);
+      const L=t.x-4*dpr, T=t.y-(t.size*1.05*dpr);
+      if(x>=L && x<=L+w+8*dpr && y>=T && y<=T+h+6*dpr) return {t,i};
     }
     return null;
   }
 
-  /* ===================== Type interactions ===================== */
-  function startTypingAt(evt){
-    const {x,y} = toCanvasCoords(evt);
-    const hit = textAtPoint(x,y);
+  /* ===== Typing interactions ===== */
+  function startTypingAt(e){
+    const {x,y}=toCanvasCoords(e);
+    const hit=textAtPoint(x,y);
     if(hit){
-      activeText = hit.t; typing=true;
-      dragInfo = { text:hit.t, dx:x-hit.t.x, dy:y-hit.t.y, dragging:false };
+      activeText=hit.t; typing=true;
+      dragInfo={text:hit.t, dx:x-hit.t.x, dy:y-hit.t.y, dragging:false};
     }else{
-      const t = {
-        x, y,
-        lines: [''],
-        font: ui.fontSel.value || "",
-        size: parseInt(ui.fontSize.value,10) || 20
-      };
-      texts.push(t);
-      history.push({type:'text'});
-      activeText = t; typing=true;
-      dragInfo = { text:t, dx:0, dy:0, dragging:false };
+      const t={ x,y, lines:[""], font:ui.fontSel.value||"", size:parseInt(ui.fontSize.value,10)||20 };
+      texts.push(t); history.push({type:"text"});
+      activeText=t; typing=true;
+      dragInfo={text:t, dx:0, dy:0, dragging:false};
     }
-    startCaretBlink();
-    redraw();
+    startCaretBlink(); redraw();
   }
-  function onPointerMoveType(evt){
+  function onPointerMoveType(e){
     if(!dragInfo) return;
-    const {x,y} = toCanvasCoords(evt);
+    const {x,y}=toCanvasCoords(e);
     if(!dragInfo.dragging){
       const mdx=Math.abs(x-(dragInfo.text.x+dragInfo.dx));
       const mdy=Math.abs(y-(dragInfo.text.y+dragInfo.dy));
       if(mdx>2*dpr || mdy>2*dpr) dragInfo.dragging=true;
     }
     if(dragInfo.dragging){
-      dragInfo.text.x = x - dragInfo.dx;
-      dragInfo.text.y = y - dragInfo.dy;
+      dragInfo.text.x=x-dragInfo.dx;
+      dragInfo.text.y=y-dragInfo.dy;
       redraw();
     }
   }
   function endTypingPointer(){ dragInfo=null; }
   function handleKey(e){
     if(!typeMode || !activeText) return;
-    if(e.key==='Escape'){ typing=false; activeText=null; stopCaretBlink(); redraw(); return; }
-    if(e.key==='Enter'){ e.preventDefault(); activeText.lines.push(''); redraw(); return; }
-    if(e.key==='Backspace'){
+    if(e.key==="Escape"){ exitTypeMode(); return; }
+    if(e.key==="Enter"){ e.preventDefault(); activeText.lines.push(""); redraw(); return; }
+    if(e.key==="Backspace"){
       e.preventDefault();
-      const line = activeText.lines[activeText.lines.length-1] ?? '';
-      if(line.length>0){
-        activeText.lines[activeText.lines.length-1] = line.slice(0,-1);
-      }else if(activeText.lines.length>1){
-        activeText.lines.pop();
-      }
+      const line=activeText.lines.at(-1)||"";
+      if(line.length>0) activeText.lines[activeText.lines.length-1]=line.slice(0,-1);
+      else if(activeText.lines.length>1) activeText.lines.pop();
       redraw(); return;
     }
     if(e.key.length===1){
-      activeText.lines[activeText.lines.length-1] += e.key;
+      activeText.lines[activeText.lines.length-1]+=e.key;
       redraw(); return;
     }
   }
-  function startCaretBlink(){
-    stopCaretBlink();
-    caretVisible=true;
-    caretTimer = setInterval(()=>{ caretVisible=!caretVisible; redraw(); }, 500);
-  }
-  function stopCaretBlink(){
-    if(caretTimer){ clearInterval(caretTimer); caretTimer=null; }
-    caretVisible=true;
-  }
+  function startCaretBlink(){ stopCaretBlink(); caretVisible=true; caretTimer=setInterval(()=>{ caretVisible=!caretVisible; redraw(); },500); }
+  function stopCaretBlink(){ if(caretTimer){ clearInterval(caretTimer); caretTimer=null; } caretVisible=true; }
 
-  /* ===================== Pen interactions ===================== */
-  function startStroke(evt){
+  /* ===== Pen interactions ===== */
+  function startStroke(e){
     isDrawing=true;
-    current={ points:[], color:'#0c1e16', base:parseFloat(ui.thick.value), smooth:parseFloat(ui.smooth.value) };
-    current.points.push(toCanvasCoords(evt));
+    current={ points:[], color:"#0c1e16", base:parseFloat(ui.thick.value), smooth:parseFloat(ui.smooth.value) };
+    current.points.push(toCanvasCoords(e));
   }
-  function extendStroke(evt){
-    if(!isDrawing || !current) return;
-    current.points.push(toCanvasCoords(evt));
-    redraw();
-  }
-  function endStroke(){
-    if(!isDrawing || !current) return;
-    strokes.push(current);
-    history.push({type:'stroke'});
-    current=null; isDrawing=false;
-    redraw();
-  }
+  function extendStroke(e){ if(!isDrawing||!current) return; current.points.push(toCanvasCoords(e)); redraw(); }
+  function endStroke(){ if(!isDrawing||!current) return; strokes.push(current); history.push({type:"stroke"}); current=null; isDrawing=false; redraw(); }
 
-  /* ===================== Redraw ===================== */
+  /* ===== Redraw ===== */
   function redraw(){
     ctx.clearRect(0,0,ink.width,ink.height);
-    // strokes
-    for(const s of strokes) drawPath(s.points, s.color, s.base, s.smooth);
-    if(current) drawPath(current.points, current.color, current.base, current.smooth);
-    // texts
+    for(const s of strokes) drawPath(s.points,s.color,s.base,s.smooth);
+    if(current) drawPath(current.points,current.color,current.base,current.smooth);
     for(const t of texts) drawTextObject(t);
     if(activeText) drawCaretFor(activeText);
   }
 
-  /* ===================== Mode toggle (button ONLY) ===================== */
+  /* ===== Mode toggle (button ONLY) ===== */
   function setTypeMode(on){
     typeMode=on;
-    ui.typeToggle.classList.toggle('active', on);
-
-    // Freeze resizes while typing to avoid keyboard-induced clears / DPR jumps
-    suspendResize = on;
+    ui.typeToggle.classList.toggle("active",on);
+    ui.typeToggle.textContent=on ? "Draw" : "Type";
+    ui.typeToggle.setAttribute("aria-pressed", on ? "true" : "false");
+    suspendResize=on; // freeze layout while typing (prevents keyboard-induced clears)
 
     if(!on){
-      typing = false; activeText = null; stopCaretBlink();
+      typing=false; activeText=null; stopCaretBlink();
       redraw();
-      // Catch up layout once after leaving typing
-      debouncedResizeAll();
+      debouncedResizeAll(); // catch up layout once after leaving typing
     }
   }
-  ui.typeToggle.addEventListener('click', ()=> setTypeMode(!typeMode));
+  function exitTypeMode(){ if(!typeMode) return; setTypeMode(false); }
+  ui.typeToggle.addEventListener("click",()=> setTypeMode(!typeMode));
 
-  /* ===================== Pointer routing ===================== */
-  ink.addEventListener('pointerdown', (e)=>{
-    ink.setPointerCapture(e.pointerId);
-    if(typeMode){ startTypingAt(e); }
-    else{ startStroke(e); }
-  });
-  ink.addEventListener('pointermove', (e)=>{
-    if(typeMode){ onPointerMoveType(e); }
-    else{ extendStroke(e); }
-  });
-  ink.addEventListener('pointerup', (e)=>{
-    ink.releasePointerCapture(e.pointerId);
-    if(typeMode){ endTypingPointer(); }
-    else{ endStroke(); }
-  });
-  ink.addEventListener('pointercancel', ()=>{
-    if(typeMode){ endTypingPointer(); } else { endStroke(); }
-  });
-
-  /* ===================== Keyboard ===================== */
-  window.addEventListener('keydown', (e)=>{
-    // Only global shortcut: Undo
-    if(e.key.toLowerCase()==='u'){
-      const last = history.pop();
-      if(last){
-        if(last.type==='stroke') strokes.pop();
-        else if(last.type==='text') texts.pop();
-        redraw();
-      }
-      return;
+  /* ===== Buttons: Undo & Esc ===== */
+  function doUndo(){
+    const last=history.pop();
+    if(last){
+      if(last.type==="stroke") strokes.pop();
+      else if(last.type==="text") texts.pop();
+      redraw();
     }
+  }
+  ui.undoBtn.addEventListener("click", doUndo);
+  ui.escBtn.addEventListener("click", exitTypeMode);
+
+  /* ===== Pointer routing ===== */
+  ink.addEventListener("pointerdown",e=>{
+    ink.setPointerCapture(e.pointerId);
+    typeMode ? startTypingAt(e) : startStroke(e);
+  });
+  ink.addEventListener("pointermove",e=>{ typeMode ? onPointerMoveType(e) : extendStroke(e); });
+  ink.addEventListener("pointerup",e=>{
+    ink.releasePointerCapture(e.pointerId);
+    typeMode ? endTypingPointer() : endStroke();
+  });
+  ink.addEventListener("pointercancel",()=>{ typeMode ? endTypingPointer() : endStroke(); });
+
+  /* ===== Keyboard ===== */
+  window.addEventListener("keydown",e=>{
+    if(e.key.toLowerCase()==="u"){ doUndo(); return; }  // global Undo
     handleKey(e);
   });
 
-  /* ===================== Controls ===================== */
-  ui.fontSel.addEventListener('change', ()=>{
-    if(activeText){ activeText.font = ui.fontSel.value || ""; redraw(); }
-  });
-  ui.fontSize.addEventListener('input', ()=>{
-    const sz = parseInt(ui.fontSize.value,10) || 20;
-    if(activeText){ activeText.size = Math.max(8, sz); redraw(); }
-  });
-  ui.thick.addEventListener('input', ()=>{ if(current) current.base=parseFloat(ui.thick.value); });
-  ui.smooth.addEventListener('input', ()=>{ if(current) current.smooth=parseFloat(ui.smooth.value); });
+  /* ===== Controls ===== */
+  ui.fontSel.addEventListener("change",()=>{ if(activeText){ activeText.font=ui.fontSel.value||""; redraw(); } });
+  ui.fontSize.addEventListener("input",()=>{ const sz=parseInt(ui.fontSize.value,10)||20; if(activeText){ activeText.size=Math.max(8,sz); redraw(); } });
+  ui.thick.addEventListener("input",()=>{ if(current) current.base=parseFloat(ui.thick.value); });
+  ui.smooth.addEventListener("input",()=>{ if(current) current.smooth=parseFloat(ui.smooth.value); });
 
-  /* ===================== New Page ===================== */
+  /* ===== New Page ===== */
   function flashPerforation(){
-    ui.pageAnim.classList.remove('tearing'); void ui.pageAnim.offsetWidth;
-    ui.pageAnim.classList.add('tearing');
-    setTimeout(()=> ui.pageAnim.classList.remove('tearing'), 800);
+    ui.pageAnim.classList.remove("tearing"); void ui.pageAnim.offsetWidth;
+    ui.pageAnim.classList.add("tearing");
+    setTimeout(()=> ui.pageAnim.classList.remove("tearing"), 800);
   }
-  ui.clear.addEventListener('click', ()=>{
+  ui.clear.addEventListener("click",()=>{
     strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink();
     redraw(); flashPerforation();
   });
 
-  /* ===================== Tear Off (download + reset) ===================== */
-  ui.tear.addEventListener('click', ()=>{
-    const off = document.createElement('canvas');
-    off.width = grid.width; off.height = grid.height;
-    const otx = off.getContext('2d');
+  /* ===== Tear Off (download + reset) ===== */
+  ui.tear.addEventListener("click",()=>{
+    const off=document.createElement("canvas");
+    off.width=grid.width; off.height=grid.height;
+    const otx=off.getContext("2d");
     otx.drawImage(grid,0,0);
     otx.drawImage(ink,0,0);
 
-    const ts = new Date(); const pad=n=>String(n).padStart(2,'0');
+    const ts=new Date(), pad=n=>String(n).padStart(2,"0");
     const name=`scribble_${ts.getFullYear()}-${pad(ts.getMonth()+1)}-${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.png`;
-    off.toBlob((blob)=>{
-      const a=document.createElement('a');
+    off.toBlob(blob=>{
+      const a=document.createElement("a");
       a.download=name; a.href=URL.createObjectURL(blob);
       document.body.appendChild(a); a.click();
       URL.revokeObjectURL(a.href); a.remove();
-    }, 'image/png');
+    },"image/png");
 
     flashPerforation();
     setTimeout(()=>{ strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink(); redraw(); }, 380);
   });
 
-  /* ===================== Init ===================== */
-  // call once in case load already fired, then double-pass after load
-  resizeAll();
+  /* ===== Init ===== */
+  resizeAll(); // default: drawing mode
 })();
 </script>
 </body>
