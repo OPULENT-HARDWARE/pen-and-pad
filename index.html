@@ -7,6 +7,8 @@
   content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover"
 />
 <title>Scribble Note — Pen & Pad</title>
+<!-- Logo font (used on chronograph): Saira Semi Condensed -->
+<link href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#f4fff7;
@@ -35,27 +37,46 @@
 
   .toolbar{
     position:absolute;top:12px;left:50%;transform:translateX(-50%);
-    display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    display:flex;gap:12px;align-items:center;flex-wrap:wrap;
     padding:8px 12px;background:rgba(255,255,255,.7);
     backdrop-filter:saturate(1.2) blur(6px);
     border:1px solid rgba(0,0,0,.08);border-radius:14px;
     box-shadow:0 6px 18px var(--shadow);z-index:3;user-select:none;
   }
-  .title{font-weight:600;margin-right:8px}
+
+  /* Title hierarchy */
+  .title{
+    display:flex; flex-direction:column; line-height:1.05;
+    margin-right:6px;
+  }
+  .title-main{
+    font-weight:700; letter-spacing:.2px; font-size:1.05rem; color:var(--ui);
+  }
+  .title-sub{
+    margin-top:2px; font-size:.78rem; color:var(--ui-muted);
+  }
+  .title-sub .oh{
+    font-family:"Saira Semi Condensed", system-ui, sans-serif;
+    text-transform:uppercase; letter-spacing:.08em; font-weight:600;
+  }
+
   .btn{
     appearance:none;border:0;outline:0;cursor:pointer;
     padding:8px 12px;border-radius:12px;font-weight:600;
     transition:transform .05s ease,background .15s ease,box-shadow .15s ease;
   }
   .btn:active{transform:translateY(1px)}
+
   .btn.tear{background:var(--tear);color:#fff}
   .btn.tear:active{background:var(--tear-pressed)}
+
   .btn.secondary{
     background:transparent;color:var(--ui);
     border:1px solid rgba(0,0,0,.12);
   }
   .btn.secondary:hover{background:rgba(0,0,0,.04)}
   .btn.secondary:active{background:rgba(0,0,0,.08)}
+
   .btn.toggle.active{
     background:rgba(0,0,0,.04);
     box-shadow:inset 0 0 0 2px rgba(0,0,0,.12);
@@ -93,7 +114,7 @@
     border:1px solid rgba(0,0,0,.08);padding:6px 8px;border-radius:10px;backdrop-filter:blur(4px);
   }
 
-  /* tiny status dot (optional) */
+  /* tiny status dot (optional for debugging) */
   .status{position:fixed;left:8px;bottom:8px;width:10px;height:10px;border-radius:50%;background:#bbb;z-index:4}
   .status.ok{background:#24c768}
 </style>
@@ -101,13 +122,16 @@
 <body>
 <div class="wrap">
   <div class="toolbar">
-    <span class="title">Scribble Note</span>
+    <span class="title">
+      <span class="title-main">Scribble Note</span>
+      <span class="title-sub">by <span class="oh">OPULENT HARDWARE</span></span>
+    </span>
+
     <button class="btn tear" id="tear">Tear Off</button>
     <button class="btn secondary" id="clear">New Page</button>
     <button class="btn secondary" id="undoBtn">Undo</button>
-    <!-- True toggle: label switches between Type and Draw -->
-    <button class="btn secondary toggle" id="typeToggle" aria-pressed="false">Type</button>
-    <button class="btn secondary" id="escBtn">Esc</button>
+    <!-- True toggle: shows current mode (Draw when drawing, Type when typing) -->
+    <button class="btn secondary toggle" id="typeToggle" aria-pressed="false">Draw</button>
 
     <div class="control">
       <label for="fontSel">Font</label>
@@ -129,7 +153,8 @@
       <label for="smooth">Smooth</label>
       <input id="smooth" class="range" type="range" min="0" max="1" value="0.5" step="0.05"/>
     </div>
-    <span class="hint">Default draw • Toggle Type to enter typing • Undo / Esc buttons included</span>
+
+    <span class="hint">Default draw • Toggle Type to enter typing • Undo reverses last • <b>Tear Off saves your note</b></span>
   </div>
 
   <div class="tear-overlay"></div>
@@ -161,7 +186,6 @@
     clear:document.getElementById("clear"),
     undoBtn:document.getElementById("undoBtn"),
     typeToggle:document.getElementById("typeToggle"),
-    escBtn:document.getElementById("escBtn"),
     thick:document.getElementById("thick"),
     smooth:document.getElementById("smooth"),
     fontSel:document.getElementById("fontSel"),
@@ -330,8 +354,9 @@
   }
   function endTypingPointer(){ dragInfo=null; }
   function handleKey(e){
+    // Esc key still exits Type mode (no Esc button in UI)
+    if(e.key==="Escape"){ if(typeMode){ setTypeMode(false); } return; }
     if(!typeMode || !activeText) return;
-    if(e.key==="Escape"){ exitTypeMode(); return; }
     if(e.key==="Enter"){ e.preventDefault(); activeText.lines.push(""); redraw(); return; }
     if(e.key==="Backspace"){
       e.preventDefault();
@@ -370,20 +395,21 @@
   function setTypeMode(on){
     typeMode=on;
     ui.typeToggle.classList.toggle("active",on);
-    ui.typeToggle.textContent=on ? "Draw" : "Type";
+    // Show CURRENT mode on the button
+    ui.typeToggle.textContent = on ? "Type" : "Draw";
     ui.typeToggle.setAttribute("aria-pressed", on ? "true" : "false");
-    suspendResize=on; // freeze layout while typing (prevents keyboard-induced clears)
+    // Freeze layout while typing (prevents keyboard-induced clears/DPR jumps)
+    suspendResize=on;
 
     if(!on){
       typing=false; activeText=null; stopCaretBlink();
       redraw();
-      debouncedResizeAll(); // catch up layout once after leaving typing
+      debouncedResizeAll(); // catch up layout after leaving typing
     }
   }
-  function exitTypeMode(){ if(!typeMode) return; setTypeMode(false); }
   ui.typeToggle.addEventListener("click",()=> setTypeMode(!typeMode));
 
-  /* ===== Buttons: Undo & Esc ===== */
+  /* ===== Buttons: Undo ===== */
   function doUndo(){
     const last=history.pop();
     if(last){
@@ -393,7 +419,6 @@
     }
   }
   ui.undoBtn.addEventListener("click", doUndo);
-  ui.escBtn.addEventListener("click", exitTypeMode);
 
   /* ===== Pointer routing ===== */
   ink.addEventListener("pointerdown",e=>{
