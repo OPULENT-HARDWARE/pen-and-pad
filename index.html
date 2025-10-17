@@ -2,36 +2,56 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover"
+/>
 <title>Scribble Note — Pen & Pad</title>
 <link href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#f4fff7; --dots:#7aa68a; --ui:#0e2b1f; --ui-muted:#5c7a6a;
-    --accent:#1aa36f; --accent-2:#0d8157;
-    --tear:#e9752a; --tear-pressed:#c7611f;
-    --shadow:rgba(0,0,0,.25); --perforation:#d2e8db;
+    --paper:#f4fff7;
+    --dots:#7aa68a;
+    --ui:#0e2b1f;
+    --ui-muted:#5c7a6a;
+
+    --accent:#1aa36f;
+    --accent-2:#0d8157;
+
+    --tear:#e9752a;           /* burnt orange */
+    --tear-pressed:#c7611f;
+
+    --shadow:rgba(0,0,0,.25);
+    --perforation:#d2e8db;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
-  body{min-height:100svh;background:var(--paper);color:var(--ui);
-       font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif}
+  body{
+    min-height:100svh;
+    background:var(--paper);
+    color:var(--ui);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
+  }
   .wrap{position:relative;width:100%;min-height:100svh;height:100%;overflow:hidden}
 
+  /* Toolbar */
   .toolbar{
-    position:absolute;top:12px;left:50%;transform:translateX(-50%);
-    display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+    position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    display:flex;gap:12px;align-items:center;flex-wrap:nowrap;
     padding:8px 12px;background:rgba(255,255,255,.7);
     backdrop-filter:saturate(1.2) blur(6px);
     border:1px solid rgba(0,0,0,.08);border-radius:14px;
-    box-shadow:0 6px 18px var(--shadow);z-index:3;user-select:none;
+    box-shadow:0 6px 18px var(--shadow);z-index:4;user-select:none;
   }
+  .toolbar.collapsed{ gap:6px; padding:6px 8px; }
 
-  /* Title */
-  .title{display:flex;flex-direction:column;line-height:1.05;margin-right:6px}
+  /* Title hierarchy */
+  .title{display:flex;flex-direction:column;line-height:1.05;margin-right:6px; white-space:nowrap}
   .title-main{font-weight:700;letter-spacing:.2px;font-size:1.05rem;color:var(--ui)}
   .title-sub{margin-top:2px;font-size:.78rem;color:var(--ui-muted)}
   .title-sub .oh{font-family:"Saira Semi Condensed",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+  .toolbar.collapsed .title-main{font-size:.95rem}
+  .toolbar.collapsed .title-sub{font-size:.7rem}
 
   .btn{
     appearance:none;border:0;outline:0;cursor:pointer;
@@ -41,21 +61,57 @@
   .btn:active{transform:translateY(1px)}
   .btn.tear{background:var(--tear);color:#fff}
   .btn.tear:active{background:var(--tear-pressed)}
-  .btn.secondary{background:transparent;color:var(--ui);border:1px solid rgba(0,0,0,.12)}
+  .btn.secondary{
+    background:transparent;color:var(--ui);
+    border:1px solid rgba(0,0,0,.12);
+  }
   .btn.secondary:hover{background:rgba(0,0,0,.04)}
   .btn.secondary:active{background:rgba(0,0,0,.08)}
-  .btn.toggle.active{background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 2px rgba(0,0,0,.12)}
+  .btn.toggle.active{
+    background:rgba(0,0,0,.04);
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,.12);
+  }
   .btn.toggle.active:active{background:rgba(0,0,0,.08)}
+  .btn.icon.only{padding:8px 10px; min-width:38px}
+  .toolbar.collapsed .btn{padding:6px 10px;border-radius:10px}
 
-  .control{display:flex;align-items:center;gap:8px;font-size:.9rem}
-  .select,.range,.number{padding:6px 8px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.8)}
+  .hint{font-size:.85rem;color:var(--ui-muted);white-space:nowrap}
+  .toolbar.collapsed .hint{display:none}
+
+  /* Advanced controls group (shown only in expanded toolbar) */
+  .controls-row{display:flex;align-items:center;gap:10px}
+  .control{display:flex;align-items:center;gap:8px;font-size:.9rem;white-space:nowrap}
+  .select,.range,.number{
+    padding:6px 8px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.85)
+  }
   input[type=range]{accent-color:var(--accent)}
   label{color:var(--ui-muted)}
-  .hint{font-size:.85rem;color:var(--ui-muted)}
 
+  /* Ellipsis + Popover */
+  .more{display:none}                         /* hidden in expanded; visible in collapsed */
+  .toolbar.collapsed .more{display:inline-flex}
+  .popover{
+    position:absolute; top:100%; right:8px; margin-top:8px; z-index:5;
+    min-width:280px; background:rgba(255,255,255,.9);
+    border:1px solid rgba(0,0,0,.1); border-radius:12px;
+    box-shadow:0 10px 24px rgba(0,0,0,.25); padding:10px;
+    backdrop-filter:blur(8px); display:none;
+  }
+  .popover.open{display:block}
+  .popover .row{display:flex;align-items:center;gap:10px; margin:8px 0; flex-wrap:wrap}
+  .popover .row .control{flex:1 1 auto}
+  .popover .line{height:1px;background:rgba(0,0,0,.08);margin:8px 0}
+
+  /* Collapse chevron */
+  .collapse-btn{margin-left:4px}
+  .collapse-btn .chev{display:inline-block; transition:transform .18s ease}
+  .toolbar.collapsed .collapse-btn .chev{transform:rotate(180deg)} /* ▲ -> ▼ effect */
+
+  /* Canvas layers */
   canvas#grid,canvas#ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   canvas#grid{z-index:0} canvas#ink{z-index:1}
 
+  /* Perforation line */
   .tear-overlay{
     pointer-events:none;position:absolute;left:0;right:0;top:58px;height:14px;z-index:2;
     background:repeating-linear-gradient(90deg,transparent 0 16px,var(--perforation) 16px 18px),
@@ -64,52 +120,100 @@
   }
   .page{position:absolute;inset:0;background:transparent;z-index:2;transform-origin:top center;pointer-events:none}
   .page.tearing{animation:tearAway .7s ease-in forwards}
-  @keyframes tearAway{0%{transform:translateY(0) rotate(0);filter:drop-shadow(0 12px 18px var(--shadow))}
-                      30%{transform:translateY(6px) rotate(-.3deg)}
-                      100%{transform:translateY(-110%) rotate(-2deg);opacity:0}}
+  @keyframes tearAway{
+    0%{transform:translateY(0) rotate(0);filter:drop-shadow(0 12px 18px var(--shadow))}
+    30%{transform:translateY(6px) rotate(-.3deg)}
+    100%{transform:translateY(-110%) rotate(-2deg);opacity:0}
+  }
 
-  .badge{position:absolute;right:10px;bottom:10px;z-index:3;font-size:.75rem;color:var(--ui-muted);
-         background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.08);padding:6px 8px;border-radius:10px;backdrop-filter:blur(4px)}
+  .badge{
+    position:absolute;right:10px;bottom:10px;z-index:3;
+    font-size:.75rem;color:var(--ui-muted);background:rgba(255,255,255,.5);
+    border:1px solid rgba(0,0,0,.08);padding:6px 8px;border-radius:10px;backdrop-filter:blur(4px);
+  }
+
   .status{position:fixed;left:8px;bottom:8px;width:10px;height:10px;border-radius:50%;background:#bbb;z-index:4}
   .status.ok{background:#24c768}
+
+  /* Tablet compression */
+  @media (min-width:768px) and (pointer:coarse){
+    .toolbar{gap:10px}
+    .btn{padding:7px 10px;border-radius:10px}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="toolbar">
+  <div class="toolbar" id="toolbar">
     <span class="title">
       <span class="title-main">Scribble Note</span>
       <span class="title-sub">by <span class="oh">OPULENT HARDWARE</span></span>
     </span>
 
     <button class="btn tear" id="tear">Tear Off</button>
-    <button class="btn secondary" id="clear">New Page</button>
     <button class="btn secondary" id="undoBtn">Undo</button>
-    <!-- Toggle shows CURRENT mode: Draw (drawing) / Type (typing) -->
+    <!-- Toggle shows CURRENT mode -->
     <button class="btn secondary toggle" id="typeToggle" aria-pressed="false">Draw</button>
 
-    <div class="control">
-      <label for="fontSel">Font</label>
-      <select id="fontSel" class="select">
-        <option value="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif">Sans</option>
-        <option value="ui-rounded,ui-script,'Segoe Print','Bradley Hand','Comic Sans MS',cursive">Cursive</option>
-        <option value="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace">Mono</option>
-      </select>
-    </div>
-    <div class="control">
-      <label for="fontSize">Size</label>
-      <input id="fontSize" class="number" type="number" min="10" max="72" step="1" value="20" style="width:70px"/>
-    </div>
-    <div class="control">
-      <label for="thick">Pen</label>
-      <input id="thick" class="range" type="range" min="1" max="6" value="3" step="0.5"/>
-    </div>
-    <div class="control">
-      <label for="smooth">Smooth</label>
-      <input id="smooth" class="range" type="range" min="0" max="1" value="0.5" step="0.05"/>
+    <!-- Expanded-only advanced controls row -->
+    <div class="controls-row" id="controlsRow">
+      <button class="btn secondary" id="clear">New Page</button>
+      <div class="control">
+        <label for="fontSel">Font</label>
+        <select id="fontSel" class="select">
+          <option value="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif">Sans</option>
+          <option value="ui-rounded,ui-script,'Segoe Print','Bradley Hand','Comic Sans MS',cursive">Cursive</option>
+          <option value="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace">Mono</option>
+        </select>
+      </div>
+      <div class="control">
+        <label for="fontSize">Size</label>
+        <input id="fontSize" class="number" type="number" min="10" max="72" step="1" value="20" style="width:70px"/>
+      </div>
+      <div class="control">
+        <label for="thick">Pen</label>
+        <input id="thick" class="range" type="range" min="1" max="6" value="3" step="0.5"/>
+      </div>
+      <div class="control">
+        <label for="smooth">Smooth</label>
+        <input id="smooth" class="range" type="range" min="0" max="1" value="0.5" step="0.05"/>
+      </div>
     </div>
 
+    <!-- Collapsed-only: more (popover) -->
+    <button class="btn secondary icon only more" id="moreBtn" aria-haspopup="true" aria-expanded="false" title="More">⋯</button>
+
+    <!-- Collapse chevron -->
+    <button class="btn secondary icon only collapse-btn" id="collapseBtn" aria-expanded="true" title="Collapse toolbar">
+      <span class="chev">▲</span>
+    </button>
+
     <span class="hint">Default draw • Toggle Type to enter typing • Undo reverses last • <b>Tear Off saves your note</b></span>
+
+    <!-- Popover for advanced controls (shown in collapsed mode) -->
+    <div class="popover" id="popover" role="dialog" aria-label="More controls">
+      <div class="row">
+        <button class="btn secondary" id="clear2" style="width:100%">New Page</button>
+      </div>
+      <div class="line"></div>
+      <div class="row">
+        <div class="control" style="flex:1">
+          <label for="fontSel2">Font</label>
+          <select id="fontSel2" class="select" style="width:100%">
+            <option value="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif">Sans</option>
+            <option value="ui-rounded,ui-script,'Segoe Print','Bradley Hand','Comic Sans MS',cursive">Cursive</option>
+            <option value="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace">Mono</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="control"><label for="fontSize2">Size</label><input id="fontSize2" class="number" type="number" min="10" max="72" step="1" value="20" style="width:80px"/></div>
+        <div class="control" style="min-width:140px"><label for="thick2">Pen</label><input id="thick2" class="range" type="range" min="1" max="6" value="3" step="0.5"/></div>
+      </div>
+      <div class="row">
+        <div class="control" style="min-width:140px"><label for="smooth2">Smooth</label><input id="smooth2" class="range" type="range" min="0" max="1" value="0.5" step="0.05"/></div>
+      </div>
+    </div>
   </div>
 
   <div class="tear-overlay"></div>
@@ -123,38 +227,45 @@
 
 <script>
 (()=>{
-  /* ===== Core ===== */
+  /* ================= Core setup ================= */
+  const toolbar = document.getElementById('toolbar');
   const grid=document.getElementById("grid"), ink=document.getElementById("ink");
   const gtx=grid.getContext("2d"), ctx=ink.getContext("2d");
+  ctx.lineCap="round"; ctx.lineJoin="round";
+
   const ui={
     tear:document.getElementById("tear"),
     clear:document.getElementById("clear"),
+    clear2:document.getElementById("clear2"),
     undoBtn:document.getElementById("undoBtn"),
     typeToggle:document.getElementById("typeToggle"),
     thick:document.getElementById("thick"),
     smooth:document.getElementById("smooth"),
     fontSel:document.getElementById("fontSel"),
     fontSize:document.getElementById("fontSize"),
-    pageAnim:document.getElementById("pageAnim")
+    thick2:document.getElementById("thick2"),
+    smooth2:document.getElementById("smooth2"),
+    fontSel2:document.getElementById("fontSel2"),
+    fontSize2:document.getElementById("fontSize2"),
+    pageAnim:document.getElementById("pageAnim"),
+    moreBtn:document.getElementById("moreBtn"),
+    popover:document.getElementById("popover"),
+    collapseBtn:document.getElementById("collapseBtn"),
+    controlsRow:document.getElementById("controlsRow")
   };
-  ctx.lineCap="round"; ctx.lineJoin="round";
 
   function getDPR(){ return Math.max(1, window.devicePixelRatio || 1); }
-  let dpr=getDPR();
+  let dpr = getDPR();
 
-  /* ===== Stability guards ===== */
-  let suspendResize=false;         // normal lock while typing
-  let keyboardLock=false;          // lock while virtual keyboard is open
-  let ignoreResizeUntil=0;         // micro-guard after toggles
-  let resizeTimer=null;
+  /* ============== Stability guards (keyboard / viewport) ============== */
+  let suspendResize=false, keyboardLock=false, ignoreResizeUntil=0, resizeTimer=null;
   const DEBOUNCE_MS=180, MICRO_GUARD_MS=250;
-
-  function now(){ return performance.now(); }
+  const now=()=>performance.now();
 
   function debouncedResizeAll(){
-    if (suspendResize || keyboardLock || now() < ignoreResizeUntil) return;
+    if (suspendResize || keyboardLock || now()<ignoreResizeUntil) return;
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(resizeAll, DEBOUNCE_MS);
+    resizeTimer=setTimeout(resizeAll, DEBOUNCE_MS);
   }
   function sizeCanvas(c){
     const r=c.getBoundingClientRect();
@@ -163,32 +274,27 @@
     c.width=w; c.height=h;
   }
   function resizeAll(){
-    if (suspendResize || keyboardLock || now() < ignoreResizeUntil) return;
+    if (suspendResize || keyboardLock || now()<ignoreResizeUntil) return;
     dpr=getDPR();
     sizeCanvas(grid); sizeCanvas(ink);
     drawGrid(); redraw();
   }
 
-  // VisualViewport guard (keyboard open/close)
   if (window.visualViewport){
     let lastVVH = window.visualViewport.height;
     window.visualViewport.addEventListener('resize', ()=>{
-      const vvh = window.visualViewport.height;
-      const delta = lastVVH - vvh;
-      // Heuristic: if height shrinks > 60px, assume keyboard opened
-      if (delta > 60){ keyboardLock = true; }
-      // If height recovers near previous, keyboard likely closed
-      if (vvh >= lastVVH - 10){ keyboardLock = false; debouncedResizeAll(); }
-      lastVVH = vvh;
+      const vvh=window.visualViewport.height, delta=lastVVH - vvh;
+      if (delta>60) keyboardLock=true;
+      if (vvh>=lastVVH-10){ keyboardLock=false; debouncedResizeAll(); }
+      lastVVH=vvh;
     }, {passive:true});
   }
 
-  // Repaint on font load / page resume / rotate
   if (document.fonts && document.fonts.ready){
     document.fonts.ready.then(()=>{ redraw(); });
     document.fonts.addEventListener?.('loadingdone', ()=>{ redraw(); });
   }
-  document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='visible') { debouncedResizeAll(); redraw(); } });
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ debouncedResizeAll(); redraw(); } });
   window.addEventListener('pageshow', ()=>{ debouncedResizeAll(); redraw(); });
   window.addEventListener('orientationchange', ()=>{ debouncedResizeAll(); });
 
@@ -196,7 +302,7 @@
   window.addEventListener('load', ()=>{ requestAnimationFrame(()=>{ resizeAll(); requestAnimationFrame(resizeAll); }); });
   new ResizeObserver(()=> debouncedResizeAll()).observe(document.body);
 
-  /* ===== Grid ===== */
+  /* ================= Grid ================= */
   function drawGrid(){
     const {width:w,height:h}=grid;
     gtx.clearRect(0,0,w,h);
@@ -211,7 +317,7 @@
     }
   }
 
-  /* ===== Model ===== */
+  /* ================= State ================= */
   let strokes=[], texts=[], history=[];
   let isDrawing=false, current=null;
   let typeMode=false; // default draw
@@ -219,7 +325,7 @@
   let caretVisible=true, caretTimer=null;
   let dragInfo=null;
 
-  /* ===== Helpers ===== */
+  /* ================= Coords & pen ================= */
   function toCanvasCoords(e){
     const r=ink.getBoundingClientRect();
     const x=(e.clientX-r.left)*dpr, y=(e.clientY-r.top)*dpr;
@@ -246,7 +352,7 @@
     ctx.stroke(); ctx.restore();
   }
 
-  /* ===== Text ===== */
+  /* ================= Text ================= */
   function setCanvasFont(font,sizePx){
     const DEF="system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
     const stack=(typeof font==="string" && font.trim().length)? font : DEF;
@@ -292,7 +398,7 @@
     return null;
   }
 
-  /* ===== Typing interactions ===== */
+  /* ================= Typing interactions ================= */
   function startTypingAt(e){
     const {x,y}=toCanvasCoords(e);
     const hit=textAtPoint(x,y);
@@ -300,7 +406,7 @@
       activeText=hit.t; typing=true;
       dragInfo={text:hit.t, dx:x-hit.t.x, dy:y-hit.t.y, dragging:false};
     }else{
-      const t={ x,y, lines:[""], font:ui.fontSel.value||"", size:parseInt(ui.fontSize.value,10)||20 };
+      const t={ x,y, lines:[""], font:ui.fontSel.value||ui.fontSel2.value||"", size:parseInt(ui.fontSize.value||ui.fontSize2.value,10)||20 };
       texts.push(t); history.push({type:"text"});
       activeText=t; typing=true;
       dragInfo={text:t, dx:0, dy:0, dragging:false};
@@ -341,12 +447,12 @@
   function startCaretBlink(){ stopCaretBlink(); caretVisible=true; caretTimer=setInterval(()=>{ caretVisible=!caretVisible; redraw(); },500); }
   function stopCaretBlink(){ if(caretTimer){ clearInterval(caretTimer); caretTimer=null; } caretVisible=true; }
 
-  /* ===== Pen interactions ===== */
-  function startStroke(e){ isDrawing=true; current={points:[],color:"#0c1e16",base:parseFloat(ui.thick.value),smooth:parseFloat(ui.smooth.value)}; current.points.push(toCanvasCoords(e)); }
+  /* ================= Draw interactions ================= */
+  function startStroke(e){ isDrawing=true; current={points:[],color:"#0c1e16",base:parseFloat(ui.thick.value||ui.thick2.value),smooth:parseFloat(ui.smooth.value||ui.smooth2.value)}; current.points.push(toCanvasCoords(e)); }
   function extendStroke(e){ if(!isDrawing||!current) return; current.points.push(toCanvasCoords(e)); redraw(); }
   function endStroke(){ if(!isDrawing||!current) return; strokes.push(current); history.push({type:"stroke"}); current=null; isDrawing=false; redraw(); }
 
-  /* ===== Redraw ===== */
+  /* ================= Redraw ================= */
   function redraw(){
     ctx.clearRect(0,0,ink.width,ink.height);
     for(const s of strokes) drawPath(s.points,s.color,s.base,s.smooth);
@@ -355,34 +461,103 @@
     if(activeText) drawCaretFor(activeText);
   }
 
-  /* ===== Mode toggle (button ONLY) ===== */
-  function setTypeMode(on){
-    // micro-guard BEFORE DOM changes
-    ignoreResizeUntil = now() + MICRO_GUARD_MS;
+  /* ================= Toolbar: collapse / popover ================= */
+  function setCollapsed(v){
+    toolbar.classList.toggle('collapsed', v);
+    ui.controlsRow.style.display = v ? 'none' : 'flex';
+    ui.moreBtn.style.display = v ? 'inline-flex' : 'none';
+    ui.collapseBtn.setAttribute('aria-expanded', (!v).toString());
+    localStorage.setItem('pad.collapsed', v ? '1' : '0');
+    closePopover();
+  }
+  function closePopover(){
+    ui.popover.classList.remove('open');
+    ui.moreBtn.setAttribute('aria-expanded','false');
+  }
+  ui.moreBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const open = !ui.popover.classList.contains('open');
+    if(open){
+      ui.popover.classList.add('open');
+      ui.moreBtn.setAttribute('aria-expanded','true');
+      // align popover to toolbar's right edge
+      const tbRect = toolbar.getBoundingClientRect();
+      ui.popover.style.right = '8px';
+    }else{
+      closePopover();
+    }
+  });
+  document.addEventListener('click', (e)=>{
+    if (!ui.popover.contains(e.target) && e.target !== ui.moreBtn) closePopover();
+  });
 
+  ui.collapseBtn.addEventListener('click', ()=>{
+    ignoreResizeUntil = now() + MICRO_GUARD_MS;
+    const collapsed = toolbar.classList.contains('collapsed');
+    setCollapsed(!collapsed);
+  });
+
+  // Initial collapsed state: default collapsed on tablets; overridden by saved pref
+  (function initCollapsed(){
+    const saved = localStorage.getItem('pad.collapsed');
+    const preferCollapsed = saved != null ? saved === '1'
+      : (matchMedia('(pointer:coarse) and (min-width:768px)').matches);
+    setCollapsed(preferCollapsed);
+  })();
+
+  /* ================= Mode toggle ================= */
+  function setTypeMode(on){
+    ignoreResizeUntil = now() + MICRO_GUARD_MS;
     typeMode=on;
     ui.typeToggle.classList.toggle("active",on);
     ui.typeToggle.textContent = on ? "Type" : "Draw"; // show CURRENT mode
     ui.typeToggle.setAttribute("aria-pressed", on ? "true" : "false");
-
-    suspendResize = on; // prevent keyboard/toolbar layout clears
+    suspendResize=on; // lock resizes while typing
 
     if(!on){
       typing=false; activeText=null; stopCaretBlink();
       redraw();
-      debouncedResizeAll(); // catch up after leaving typing
+      debouncedResizeAll();
     }
   }
   ui.typeToggle.addEventListener("click",()=> setTypeMode(!typeMode));
 
-  /* ===== Buttons ===== */
+  /* ================= Buttons ================= */
   function doUndo(){
     const last=history.pop();
     if(last){ if(last.type==="stroke") strokes.pop(); else if(last.type==="text") texts.pop(); redraw(); }
   }
   ui.undoBtn.addEventListener("click", doUndo);
 
-  /* ===== Pointer routing ===== */
+  // New Page in both places
+  function newPage(){
+    strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink();
+    redraw(); flashPerforation();
+  }
+  if(ui.clear) ui.clear.addEventListener("click", newPage);
+  if(ui.clear2) ui.clear2.addEventListener("click", ()=>{ newPage(); closePopover(); });
+
+  // Sync duplicate controls in popover and toolbar
+  function syncFont(from, to){ to.value = from.value; if(activeText){ activeText.font = to.value || ""; redraw(); } }
+  function syncSize(from, to){ to.value = from.value; if(activeText){ activeText.size = Math.max(8, parseInt(to.value,10)||20); redraw(); } }
+  function syncRange(from, to, key){
+    to.value = from.value;
+    if(current) current[key] = parseFloat(to.value);
+  }
+
+  ui.fontSel.addEventListener("change", ()=> syncFont(ui.fontSel, ui.fontSel2));
+  ui.fontSel2.addEventListener("change", ()=>{ syncFont(ui.fontSel2, ui.fontSel); closePopover(); });
+
+  ui.fontSize.addEventListener("input", ()=> syncSize(ui.fontSize, ui.fontSize2));
+  ui.fontSize2.addEventListener("input", ()=>{ syncSize(ui.fontSize2, ui.fontSize); });
+
+  ui.thick.addEventListener("input", ()=> syncRange(ui.thick, ui.thick2, 'base'));
+  ui.thick2.addEventListener("input", ()=>{ syncRange(ui.thick2, ui.thick, 'base'); });
+
+  ui.smooth.addEventListener("input", ()=> syncRange(ui.smooth, ui.smooth2, 'smooth'));
+  ui.smooth2.addEventListener("input", ()=>{ syncRange(ui.smooth2, ui.smooth, 'smooth'); });
+
+  /* ================= Pointer routing ================= */
   ink.addEventListener("pointerdown",e=>{
     ink.setPointerCapture(e.pointerId);
     typeMode ? startTypingAt(e) : startStroke(e);
@@ -394,23 +569,18 @@
   });
   ink.addEventListener("pointercancel",()=>{ typeMode ? endTypingPointer() : endStroke(); });
 
-  /* ===== Keyboard ===== */
+  /* ================= Keyboard ================= */
   window.addEventListener("keydown",e=>{
     if(e.key.toLowerCase()==="u"){ doUndo(); return; }
     handleKey(e);
   });
 
-  /* ===== Controls ===== */
-  ui.fontSel.addEventListener("change",()=>{ if(activeText){ activeText.font=ui.fontSel.value||""; redraw(); } });
-  ui.fontSize.addEventListener("input",()=>{ const sz=parseInt(ui.fontSize.value,10)||20; if(activeText){ activeText.size=Math.max(8,sz); redraw(); } });
-  ui.thick.addEventListener("input",()=>{ if(current) current.base=parseFloat(ui.thick.value); });
-  ui.smooth.addEventListener("input",()=>{ if(current) current.smooth=parseFloat(ui.smooth.value); });
-
-  /* ===== New Page ===== */
-  function flashPerforation(){ ui.pageAnim.classList.remove("tearing"); void ui.pageAnim.offsetWidth; ui.pageAnim.classList.add("tearing"); setTimeout(()=> ui.pageAnim.classList.remove("tearing"), 800); }
-  ui.clear.addEventListener("click",()=>{ strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink(); redraw(); flashPerforation(); });
-
-  /* ===== Tear Off ===== */
+  /* ================= Perforation flash & Tear Off ================= */
+  function flashPerforation(){
+    const el = document.getElementById('pageAnim');
+    el.classList.remove("tearing"); void el.offsetWidth; el.classList.add("tearing");
+    setTimeout(()=> el.classList.remove("tearing"), 800);
+  }
   ui.tear.addEventListener("click",()=>{
     const off=document.createElement("canvas");
     off.width=grid.width; off.height=grid.height;
@@ -419,14 +589,24 @@
     const ts=new Date(), pad=n=>String(n).padStart(2,"0");
     const name=`scribble_${ts.getFullYear()}-${pad(ts.getMonth()+1)}-${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.png`;
     off.toBlob(blob=>{
-      const a=document.createElement("a"); a.download=name; a.href=URL.createObjectURL(blob);
-      document.body.appendChild(a); a.click(); URL.revokeObjectURL(a.href); a.remove();
+      const a=document.createElement("a");
+      a.download=name; a.href=URL.createObjectURL(blob);
+      document.body.appendChild(a); a.click();
+      URL.revokeObjectURL(a.href); a.remove();
     },"image/png");
     flashPerforation();
     setTimeout(()=>{ strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink(); redraw(); }, 380);
   });
 
-  /* ===== Init ===== */
+  /* ================= Init ================= */
+  function initialControlSync(){
+    // Ensure popover controls mirror toolbar defaults
+    ui.fontSel2.value = ui.fontSel.value;
+    ui.fontSize2.value = ui.fontSize.value;
+    ui.thick2.value = ui.thick.value;
+    ui.smooth2.value = ui.smooth.value;
+  }
+  initialControlSync();
   resizeAll(); // default: drawing mode
 })();
 </script>
