@@ -65,4 +65,430 @@
   /* Canvases */
   canvas#grid, canvas#ink{
     position:absolute; inset:0; width:100%; height:100%;
-    touch-action:none; /* allow drawing on*
+    touch-action:none; /* allow drawing on touch */
+  }
+  canvas#grid{ z-index:0 }
+  canvas#ink{ z-index:1 }
+
+  /* Perforation & tear animation overlay */
+  .tear-overlay{
+    pointer-events:none; position:absolute; left:0; right:0; top:58px; height:14px; z-index:2;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 16px, var(--perforation) 16px 18px),
+      linear-gradient(var(--perforation), var(--perforation));
+    background-size:auto 2px, 100% 2px; background-repeat:no-repeat; background-position:0 6px, 0 6px; opacity:.9;
+  }
+  .page{ position:absolute; inset:0; background:transparent; z-index:2; transform-origin: top center; pointer-events:none; }
+  .page.tearing{ animation:tearAway .7s ease-in forwards; }
+  @keyframes tearAway{
+    0% { transform:translateY(0) rotate(0); filter:drop-shadow(0 12px 18px var(--shadow)); }
+    30%{ transform:translateY(6px) rotate(-0.3deg) }
+    100%{ transform:translateY(-110%) rotate(-2deg); opacity:0 }
+  }
+
+  .badge{
+    position:absolute; right:10px; bottom:10px; z-index:3;
+    font-size:.75rem; color:var(--ui-muted); background:rgba(255,255,255,.5);
+    border:1px solid rgba(0,0,0,.08); padding:6px 8px; border-radius:10px;
+    backdrop-filter:blur(4px);
+  }
+
+  /* Minimal status dot so you can confirm render if things go wrong */
+  .status{position:fixed;left:8px;bottom:8px;width:10px;height:10px;border-radius:50%;background:#bbb;z-index:4}
+  .status.ok{background:#24c768}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="toolbar">
+    <span class="title">Scribble Note</span>
+    <button class="btn" id="tear">Tear Off</button>
+    <button class="btn secondary" id="clear">New Page</button>
+
+    <button class="btn toggle" id="typeToggle" title="Type tool (T)">Type</button>
+    <div class="control">
+      <label for="fontSel">Font</label>
+      <select id="fontSel" class="select">
+        <option value="system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif">Sans</option>
+        <option value="ui-rounded, ui-script, 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive">Cursive</option>
+        <option value="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">Mono</option>
+      </select>
+    </div>
+    <div class="control">
+      <label for="fontSize">Size</label>
+      <input id="fontSize" class="number" type="number" min="10" max="72" step="1" value="20" style="width:70px" />
+    </div>
+
+    <div class="control">
+      <label for="thick">Pen</label>
+      <input id="thick" class="range" type="range" min="1" max="6" value="3" step="0.5" />
+    </div>
+    <div class="control">
+      <label for="smooth">Smooth</label>
+      <input id="smooth" class="range" type="range" min="0" max="1" value="0.5" step="0.05" />
+    </div>
+
+    <span class="hint">Draw or press <b>T</b> for Type. <b>U</b> undo last. Drag text in Type mode.</span>
+  </div>
+
+  <div class="tear-overlay" aria-hidden="true"></div>
+  <div class="page" id="pageAnim" aria-hidden="true"></div>
+
+  <canvas id="grid"></canvas>
+  <canvas id="ink"></canvas>
+
+  <div class="badge">Dotted engineering paper • ink + typed text</div>
+</div>
+<div id="status" class="status" title="Render status"></div>
+
+<script>
+(()=>{
+  const statusEl = document.getElementById('status');
+  const markOK = ()=> statusEl.classList.add('ok');
+
+  const grid = document.getElementById('grid');
+  const ink = document.getElementById('ink');
+  const gtx = grid.getContext('2d');
+  const ctx = ink.getContext('2d');
+  ctx.lineCap='round'; ctx.lineJoin='round';
+
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+  // UI refs
+  const ui = {
+    tear: document.getElementById('tear'),
+    clear: document.getElementById('clear'),
+    thick: document.getElementById('thick'),
+    smooth: document.getElementById('smooth'),
+    typeToggle: document.getElementById('typeToggle'),
+    fontSel: document.getElementById('fontSel'),
+    fontSize: document.getElementById('fontSize'),
+    pageAnim: document.getElementById('pageAnim')
+  };
+
+  /* ---------- Canvas sizing (hardened) ---------- */
+  function sizeCanvas(c){
+    const rect = c.getBoundingClientRect();
+    let w = Math.round(rect.width * dpr);
+    let h = Math.round(rect.height * dpr);
+    if (w < 2 || h < 2){ // fallback if layout not ready
+      w = Math.round(window.innerWidth * dpr);
+      h = Math.round(window.innerHeight * dpr);
+    }
+    c.width = w; c.height = h;
+  }
+
+  function resizeAll(){
+    sizeCanvas(grid); sizeCanvas(ink);
+    drawGrid(); redraw();
+    markOK();
+  }
+
+  window.addEventListener('resize', resizeAll, {passive:true});
+  window.addEventListener('load', ()=>{
+    // double-pass helps iOS Safari + some Android WebViews
+    requestAnimationFrame(()=>{ resizeAll(); requestAnimationFrame(resizeAll); });
+  });
+  new ResizeObserver(()=> resizeAll()).observe(document.body);
+
+  /* ---------- Dotted engineering paper ---------- */
+  function drawGrid(){
+    const {width:w,height:h} = grid;
+    gtx.clearRect(0,0,w,h);
+    // paper
+    gtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--paper') || '#f4fff7';
+    gtx.fillRect(0,0,w,h);
+    // dots
+    const gap = 20 * dpr;
+    const r = 0.85 * dpr;
+    gtx.fillStyle = 'rgba(122,166,138,.65)';
+    for(let y=gap/2; y<h; y+=gap){
+      for(let x=gap/2; x<w; x+=gap){
+        gtx.beginPath(); gtx.arc(x,y,r,0,Math.PI*2); gtx.fill();
+      }
+    }
+  }
+
+  /* ---------- State ---------- */
+  let strokes = [];    // {points:[{x,y,t,p}], color, base, smooth}
+  let texts = [];      // {x,y,lines:[...], font, size}
+  let history = [];    // {type:'stroke'|'text'}
+
+  // Drawing state
+  let isDrawing=false, current=null;
+
+  // Type state
+  let typeMode=false;
+  let typing=false, activeText=null;
+  let caretVisible=true, caretTimer=null;
+  let dragInfo=null; // {text, dx, dy, dragging}
+
+  /* ---------- Coords ---------- */
+  function toCanvasCoords(evt, target=ink){
+    const rect = target.getBoundingClientRect();
+    const x = (evt.clientX - rect.left) * dpr;
+    const y = (evt.clientY - rect.top) * dpr;
+    const p = typeof evt.pressure==='number' && evt.pressure>0 ? evt.pressure : 0.3;
+    return {x,y,p,t:performance.now()};
+  }
+
+  /* ---------- Pen smoothing ---------- */
+  function strokeWidth(i, pts, base){
+    const p = pts[i], prev = pts[i-1] || p;
+    const dx = p.x - prev.x, dy = p.y - prev.y;
+    const dt = Math.max(0.1, (p.t - prev.t));
+    const v = Math.hypot(dx,dy)/dt; // px/ms
+    const min=0.6, max=2.2;
+    const pressureBoost = (p.p>0.05) ? (0.5 + p.p*0.9) : 1;
+    return base * (min + (max-min)*(1/(1+v*14))) * pressureBoost;
+  }
+  function drawPath(pts, color, base, smooth){
+    if(pts.length<2) return;
+    ctx.save(); ctx.strokeStyle=color; ctx.beginPath();
+    const lerp=(a,b,t)=>a+(b-a)*t;
+    const mpt=(a,b,s)=>({x:lerp(a.x,b.x,s), y:lerp(a.y,b.y,s), p:lerp(a.p,b.p,s), t:lerp(a.t,b.t,s)});
+    let p0=pts[0]; ctx.moveTo(p0.x,p0.y);
+    for(let i=1;i<pts.length;i++){
+      const p1=pts[i], mid=mpt(p0,p1, 0.5 + (smooth-0.5)*0.6);
+      ctx.lineWidth = strokeWidth(i, pts, base*dpr);
+      ctx.quadraticCurveTo(p0.x,p0.y, mid.x,mid.y);
+      p0=p1;
+    }
+    ctx.stroke(); ctx.restore();
+  }
+
+  /* ---------- Text rendering ---------- */
+  function setCanvasFont(font,sizePx){
+    ctx.font = `${(sizePx*dpr)}px ${font}`;
+    ctx.textBaseline='alphabetic';
+    ctx.fillStyle='#0c1e16';
+  }
+  function drawTextObject(t){
+    setCanvasFont(t.font, t.size);
+    const lineH = Math.round(t.size * 1.35) * dpr;
+    let y = t.y;
+    for(const line of t.lines){
+      ctx.fillText(line, t.x, y);
+      y += lineH;
+    }
+  }
+  function drawCaretFor(t){
+    if(!typing || !caretVisible || t!==activeText) return;
+    setCanvasFont(t.font, t.size);
+    const lineH = Math.round(t.size * 1.35) * dpr;
+    const lastLine = t.lines[t.lines.length-1] || '';
+    const x = t.x + ctx.measureText(lastLine).width + 2*dpr;
+    const yBase = t.y + (t.lines.length-1)*lineH;
+    ctx.save();
+    ctx.strokeStyle='rgba(12,30,22,.9)';
+    ctx.lineWidth = 1.5*dpr;
+    ctx.beginPath();
+    ctx.moveTo(x, yBase - (t.size*1.05*dpr));
+    ctx.lineTo(x, yBase + (t.size*0.25*dpr));
+    ctx.stroke();
+    ctx.restore();
+  }
+  function textAtPoint(x,y){
+    for(let i=texts.length-1;i>=0;i--){
+      const t=texts[i];
+      setCanvasFont(t.font,t.size);
+      const lineH = Math.round(t.size*1.35)*dpr;
+      const width = Math.max(...t.lines.map(l=>ctx.measureText(l).width), 20*dpr);
+      const height = Math.max(lineH*t.lines.length, lineH);
+      const left=t.x-4*dpr, top=t.y-(t.size*1.05*dpr);
+      if(x>=left && x<=left+width+8*dpr && y>=top && y<=top+height+6*dpr) return {t,i};
+    }
+    return null;
+  }
+
+  /* ---------- Type interactions ---------- */
+  function startTypingAt(evt){
+    const {x,y} = toCanvasCoords(evt);
+    const hit = textAtPoint(x,y);
+    if(hit){
+      activeText = hit.t; typing=true;
+      dragInfo = { text:hit.t, dx:x-hit.t.x, dy:y-hit.t.y, dragging:false };
+    }else{
+      const t = {
+        x, y,
+        lines: [''],
+        font: ui.fontSel.value,
+        size: parseInt(ui.fontSize.value,10) || 20
+      };
+      texts.push(t);
+      history.push({type:'text'});
+      activeText = t; typing=true;
+      dragInfo = { text:t, dx:0, dy:0, dragging:false };
+    }
+    startCaretBlink();
+    redraw();
+  }
+  function onPointerMoveType(evt){
+    if(!dragInfo) return;
+    const {x,y} = toCanvasCoords(evt);
+    if(!dragInfo.dragging){
+      const mdx=Math.abs(x-(dragInfo.text.x+dragInfo.dx));
+      const mdy=Math.abs(y-(dragInfo.text.y+dragInfo.dy));
+      if(mdx>2*dpr || mdy>2*dpr) dragInfo.dragging=true;
+    }
+    if(dragInfo.dragging){
+      dragInfo.text.x = x - dragInfo.dx;
+      dragInfo.text.y = y - dragInfo.dy;
+      redraw();
+    }
+  }
+  function endTypingPointer(){ dragInfo=null; }
+  function handleKey(e){
+    if(!typeMode || !activeText) return;
+    if(e.key==='Escape'){ typing=false; activeText=null; stopCaretBlink(); redraw(); return; }
+    if(e.key==='Enter'){ e.preventDefault(); activeText.lines.push(''); redraw(); return; }
+    if(e.key==='Backspace'){
+      e.preventDefault();
+      const line = activeText.lines[activeText.lines.length-1] ?? '';
+      if(line.length>0){
+        activeText.lines[activeText.lines.length-1] = line.slice(0,-1);
+      }else if(activeText.lines.length>1){
+        activeText.lines.pop();
+      }
+      redraw(); return;
+    }
+    if(e.key.length===1){
+      activeText.lines[activeText.lines.length-1] += e.key;
+      redraw(); return;
+    }
+  }
+  function startCaretBlink(){
+    stopCaretBlink();
+    caretVisible=true;
+    caretTimer = setInterval(()=>{ caretVisible=!caretVisible; redraw(); }, 500);
+  }
+  function stopCaretBlink(){
+    if(caretTimer){ clearInterval(caretTimer); caretTimer=null; }
+    caretVisible=true;
+  }
+
+  /* ---------- Pen interactions ---------- */
+  function startStroke(evt){
+    isDrawing=true;
+    current={ points:[], color:'#0c1e16', base:parseFloat(ui.thick.value), smooth:parseFloat(ui.smooth.value) };
+    current.points.push(toCanvasCoords(evt));
+  }
+  function extendStroke(evt){
+    if(!isDrawing || !current) return;
+    current.points.push(toCanvasCoords(evt));
+    redraw();
+  }
+  function endStroke(){
+    if(!isDrawing || !current) return;
+    strokes.push(current);
+    history.push({type:'stroke'});
+    current=null; isDrawing=false;
+    redraw();
+  }
+
+  /* ---------- Redraw ---------- */
+  function redraw(){
+    ctx.clearRect(0,0,ink.width,ink.height);
+    // strokes
+    for(const s of strokes) drawPath(s.points, s.color, s.base, s.smooth);
+    if(current) drawPath(current.points, current.color, current.base, current.smooth);
+    // texts
+    for(const t of texts) drawTextObject(t);
+    if(activeText) drawCaretFor(activeText);
+  }
+
+  /* ---------- Mode toggle ---------- */
+  function setTypeMode(on){
+    typeMode=on;
+    ui.typeToggle.classList.toggle('active', on);
+    if(!on){ typing=false; activeText=null; stopCaretBlink(); redraw(); }
+  }
+
+  /* ---------- Pointer routing ---------- */
+  ink.addEventListener('pointerdown', (e)=>{
+    ink.setPointerCapture(e.pointerId);
+    if(typeMode){ startTypingAt(e); }
+    else{ startStroke(e); }
+  });
+  ink.addEventListener('pointermove', (e)=>{
+    if(typeMode){ onPointerMoveType(e); }
+    else{ extendStroke(e); }
+  });
+  ink.addEventListener('pointerup', (e)=>{
+    ink.releasePointerCapture(e.pointerId);
+    if(typeMode){ endTypingPointer(); }
+    else{ endStroke(); }
+  });
+  ink.addEventListener('pointercancel', ()=>{
+    if(typeMode){ endTypingPointer(); } else { endStroke(); }
+  });
+
+  /* ---------- Keyboard ---------- */
+  window.addEventListener('keydown', (e)=>{
+    // quick toggles & undo
+    if(e.key.toLowerCase()==='t'){ setTypeMode(!typeMode); return; }
+    if(e.key.toLowerCase()==='u'){
+      const last = history.pop();
+      if(last){
+        if(last.type==='stroke') strokes.pop();
+        else if(last.type==='text') texts.pop();
+        redraw();
+      }
+      return;
+    }
+    handleKey(e);
+  });
+
+  /* ---------- Controls ---------- */
+  ui.fontSel.addEventListener('change', ()=>{
+    if(activeText){ activeText.font = ui.fontSel.value; redraw(); }
+  });
+  ui.fontSize.addEventListener('input', ()=>{
+    const sz = parseInt(ui.fontSize.value,10)||20;
+    if(activeText){ activeText.size=sz; redraw(); }
+  });
+  ui.typeToggle.addEventListener('click', ()=> setTypeMode(!typeMode));
+
+  ui.thick.addEventListener('input', ()=>{ if(current) current.base=parseFloat(ui.thick.value); });
+  ui.smooth.addEventListener('input', ()=>{ if(current) current.smooth=parseFloat(ui.smooth.value); });
+
+  /* ---------- New Page ---------- */
+  function flashPerforation(){
+    ui.pageAnim.classList.remove('tearing'); void ui.pageAnim.offsetWidth;
+    ui.pageAnim.classList.add('tearing');
+    setTimeout(()=> ui.pageAnim.classList.remove('tearing'), 800);
+  }
+  ui.clear.addEventListener('click', ()=>{
+    strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink();
+    redraw(); flashPerforation();
+  });
+
+  /* ---------- Tear Off (download + reset) ---------- */
+  ui.tear.addEventListener('click', ()=>{
+    const off = document.createElement('canvas');
+    off.width = grid.width; off.height = grid.height;
+    const otx = off.getContext('2d');
+    otx.drawImage(grid,0,0);
+    otx.drawImage(ink,0,0);
+
+    const ts = new Date(); const pad=n=>String(n).padStart(2,'0');
+    const name=`scribble_${ts.getFullYear()}-${pad(ts.getMonth()+1)}-${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.png`;
+    off.toBlob((blob)=>{
+      const a=document.createElement('a');
+      a.download=name; a.href=URL.createObjectURL(blob);
+      document.body.appendChild(a); a.click();
+      URL.revokeObjectURL(a.href); a.remove();
+    }, 'image/png');
+
+    flashPerforation();
+    setTimeout(()=>{ strokes=[]; texts=[]; history=[]; activeText=null; typing=false; stopCaretBlink(); redraw(); }, 380);
+  });
+
+  /* ---------- Init ---------- */
+  // call once in case load already fired, then double-pass after load
+  resizeAll();
+
+})();
+</script>
+</body>
+</html>
