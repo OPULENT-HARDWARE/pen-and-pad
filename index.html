@@ -2,27 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover"
-/>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Scribble Note — Pen & Pad</title>
 <link href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#f4fff7;
-    --dots:#7aa68a;
-    --ui:#0e2b1f;
-    --ui-muted:#5c7a6a;
-
-    --accent:#1aa36f;
-    --accent-2:#0d8157;
-
-    --tear:#e9752a;           /* burnt orange */
-    --tear-pressed:#c7611f;
-
-    --shadow:rgba(0,0,0,.25);
-    --perforation:#d2e8db;
+    --paper:#f4fff7; --dots:#7aa68a; --ui:#0e2b1f; --ui-muted:#5c7a6a;
+    --accent:#1aa36f; --accent-2:#0d8157;
+    --tear:#e9752a; --tear-pressed:#c7611f;
+    --shadow:rgba(0,0,0,.25); --perforation:#d2e8db;
 
     --seg-bg:rgba(0,0,0,.06);
     --seg-border:rgba(0,0,0,.14);
@@ -32,9 +20,7 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
   body{
-    min-height:100svh;
-    background:var(--paper);
-    color:var(--ui);
+    min-height:100svh;background:var(--paper);color:var(--ui);
     font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
   }
   .wrap{position:relative;width:100%;min-height:100svh;height:100%;overflow:hidden}
@@ -50,7 +36,7 @@
   }
   .toolbar.collapsed{ gap:6px; padding:6px 8px; }
 
-  /* Title hierarchy */
+  /* Title */
   .title{display:flex;flex-direction:column;line-height:1.05;margin-right:6px; white-space:nowrap}
   .title-main{font-weight:700;letter-spacing:.2px;font-size:1.05rem;color:var(--ui)}
   .title-sub{margin-top:2px;font-size:.78rem;color:var(--ui-muted)}
@@ -66,10 +52,7 @@
   .btn:active{transform:translateY(1px)}
   .btn.tear{background:var(--tear);color:#fff}
   .btn.tear:active{background:var(--tear-pressed)}
-  .btn.secondary{
-    background:transparent;color:var(--ui);
-    border:1px solid rgba(0,0,0,.12);
-  }
+  .btn.secondary{background:transparent;color:var(--ui);border:1px solid rgba(0,0,0,.12)}
   .btn.secondary:hover{background:rgba(0,0,0,.04)}
   .btn.secondary:active{background:rgba(0,0,0,.08)}
   .btn.icon.only{padding:8px 10px; min-width:38px}
@@ -93,7 +76,7 @@
     background:var(--seg-active); box-shadow:0 1px 0 rgba(0,0,0,.06), 0 0 0 1px var(--seg-active-border) inset;
   }
 
-  /* Advanced controls row (expanded only) */
+  /* Controls row */
   .controls-row{display:flex;align-items:center;gap:10px; flex-wrap:wrap}
   .control{display:flex;align-items:center;gap:8px;font-size:.9rem;white-space:nowrap}
   .select,.range,.number{
@@ -102,7 +85,7 @@
   input[type=range]{accent-color:var(--accent)}
   label{color:var(--ui-muted)}
 
-  /* Ellipsis + Popover (collapsed advanced controls) */
+  /* Ellipsis + Popover */
   .more{display:none}
   .toolbar.collapsed .more{display:inline-flex}
   .popover{
@@ -120,13 +103,13 @@
   /* Collapse chevron */
   .collapse-btn{margin-left:auto}
   .collapse-btn .chev{display:inline-block; transition:transform .18s ease}
-  .toolbar.collapsed .collapse-btn .chev{transform:rotate(180deg)} /* ▲ -> ▼ */
+  .toolbar.collapsed .collapse-btn .chev{transform:rotate(180deg)}
 
   /* Canvas layers */
   canvas#grid,canvas#ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   canvas#grid{z-index:0} canvas#ink{z-index:1}
 
-  /* Perforation (visual only) */
+  /* Perforation (visual) */
   .tear-overlay{
     pointer-events:none;position:absolute;left:0;right:0;top:58px;height:14px;z-index:2;
     background:repeating-linear-gradient(90deg,transparent 0 16px,var(--perforation) 16px 18px),
@@ -152,14 +135,14 @@
 
   /* Inline editor (contenteditable) */
   #inlineEditor{
-    position:absolute; z-index:3; /* above canvas, under toolbar */
+    position:absolute; z-index:3; /* above canvas, below toolbar */
     min-width:1px; background:transparent; color:#0c1e16;
     outline:0; border:0; padding:0; margin:0;
     white-space:pre-wrap; word-break:break-word;
     -webkit-user-select:text; user-select:text;
     caret-color:#0c1e16;
-    /* font and line-height are set dynamically */
     display:none;
+    pointer-events:none; /* default: does not intercept input */
   }
 
   /* Tablet compression */
@@ -358,8 +341,6 @@
   let isDrawing=false, current=null;
   let typeMode=false; // default draw
   let typing=false, activeText=null;
-  let caretVisible=true, caretTimer=null;
-  let dragInfo=null;
 
   /* ================= Autosave / Restore ================= */
   const SAVE_KEY='pad.state.v1';
@@ -447,8 +428,6 @@
     let y=t.y;
     for(const line of t.lines){ ctx.fillText(line,t.x,y); y+=lh; }
   }
-
-  /* ================= Hit test for text ================= */
   function textAtPoint(x,y){
     for(let i=texts.length-1;i>=0;i--){
       const t=texts[i];
@@ -466,10 +445,9 @@
   function setEditorStyleFor(t){
     const r=ink.getBoundingClientRect();
     const cssX = r.left + (t.x / dpr);
-    const cssY = r.top  + (t.y / dpr) - (t.size * 1.05); // approximate ascent above baseline
+    const cssY = r.top  + (t.y / dpr) - (t.size * 1.05);
     const lineH = Math.round(t.size*1.35);
     const fontStack = (t.font && t.font.trim().length) ? t.font : "system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif";
-
     const ed = ui.inlineEditor;
     ed.style.left = cssX + "px";
     ed.style.top  = cssY + "px";
@@ -482,12 +460,13 @@
     const ed = ui.inlineEditor;
     ed.textContent = t.lines.join("\n");
     ed.style.display = "block";
-    // Focus in next frame (more reliable on iOS)
+    ed.style.pointerEvents = "auto"; // only intercept while visible
     requestAnimationFrame(()=>{ ed.focus(); placeCaretAtEnd(ed); });
   }
   function hideEditor(){
     const ed = ui.inlineEditor;
     ed.style.display = "none";
+    ed.style.pointerEvents = "none"; // stop intercepting input
     ed.blur();
     ed.textContent = "";
   }
@@ -504,7 +483,6 @@
   function updateActiveTextFromEditor(){
     if(!activeText) return;
     const ed = ui.inlineEditor;
-    // Split on \n, normalize CR
     const lines = ed.textContent.replace(/\r/g,'').split("\n");
     activeText.lines = lines;
     redraw();
@@ -513,32 +491,29 @@
 
   /* ================= Typing interactions (with inline editor) ================= */
   function startTypingAt(e){
-    // entering type mode requires an explicit tap; place or edit text
     const {x,y}=toCanvasCoords(e);
     const hit=textAtPoint(x,y);
-    // If toolbar inputs are focused, blur them so keyboard focus is owned by the editor
     if (document.activeElement && document.activeElement !== ui.inlineEditor) {
       document.activeElement.blur?.();
     }
-
     if(hit){
-      activeText = hit.t; typing=true;
-      showEditorFor(activeText);
+      activeText = hit.t; typing=true; showEditorFor(activeText);
     }else{
       const t={
-        x, y,
-        lines:[""],
+        x, y, lines:[""],
         font:(ui.fontSel.value||ui.fontSel2.value||""),
         size:parseInt(ui.fontSize.value||ui.fontSize2.value,10)||20
       };
       texts.push(t); history.push({type:"text"}); scheduleSave();
-      activeText=t; typing=true;
-      showEditorFor(activeText);
+      activeText=t; typing=true; showEditorFor(activeText);
     }
-    redraw(); // redraw without activeText (editor will render it visually)
+    redraw();
   }
 
-  // While editor is open, skip drawing the active text on canvas to avoid double rendering
+  // Keep editor aligned on scroll / resize (minor guard)
+  window.addEventListener('scroll', ()=>{ if(typing && activeText) setEditorStyleFor(activeText); }, {passive:true});
+
+  /* ================= Redraw (skips live-edited block to avoid double render) ================= */
   function redraw(){
     ctx.clearRect(0,0,ink.width,ink.height);
     for(const s of strokes) drawPath(s.points,s.color,s.base,s.smooth);
@@ -548,9 +523,6 @@
       drawTextObject(t);
     }
   }
-
-  // Keep editor aligned on scroll / resize (minor guard)
-  window.addEventListener('scroll', ()=>{ if(typing && activeText) setEditorStyleFor(activeText); }, {passive:true});
 
   /* ================= Mode toggle (segmented) ================= */
   function updateSegUI(){
@@ -565,50 +537,41 @@
   function setTypeMode(on){
     ignoreResizeUntil = now() + MICRO_GUARD_MS;
     typeMode=on; updateSegUI();
-    // Blur any toolbar input to avoid surprise keyboards
     if (document.activeElement && document.activeElement !== ui.inlineEditor) {
       document.activeElement.blur?.();
     }
-    // Lock resizes while typing
     suspendResize=on;
-
     if(!on){
-      // Leaving type mode: commit and hide editor
-      if(typing && activeText){
-        updateActiveTextFromEditor();
-      }
-      typing=false; hideEditor();
-      activeText=null;
-      redraw();
-      debouncedResizeAll();
+      if(typing && activeText){ updateActiveTextFromEditor(); }
+      typing=false; hideEditor(); activeText=null;
+      redraw(); debouncedResizeAll();
     }
   }
   ui.segDraw.addEventListener('click', ()=> setTypeMode(false));
   ui.segType.addEventListener('click', ()=> setTypeMode(true));
 
-  /* ================= Pointer routing ================= */
-  ink.addEventListener("pointerdown",e=>{
-    ink.setPointerCapture(e.pointerId);
-    typeMode ? startTypingAt(e) : startStroke(e);
-  });
-  ink.addEventListener("pointermove",e=>{ typeMode ? null : extendStroke(e); });
-  ink.addEventListener("pointerup",e=>{
-    ink.releasePointerCapture(e.pointerId);
-    typeMode ? null : endStroke();
-  });
-  ink.addEventListener("pointercancel",()=>{ typeMode ? null : endStroke(); });
-
-  /* ================= Editor events ================= */
-  ui.inlineEditor.addEventListener('input', updateActiveTextFromEditor);
-  ui.inlineEditor.addEventListener('blur', ()=>{
-    // Commit when focus leaves the editor (including toggling to Draw)
-    if(typing && activeText){
-      updateActiveTextFromEditor();
+  /* ================= DRAW interactions (non-passive + preventDefault) ================= */
+  function startStroke(e){
+    e.preventDefault();
+    // Safety: if editor is visible, commit & hide before drawing
+    if (ui.inlineEditor.style.display==='block'){
+      if(typing && activeText){ updateActiveTextFromEditor(); }
+      typing=false; hideEditor(); activeText=null;
     }
-    // Keep typing mode until user actually switches or taps elsewhere
-    hideEditor();
-    redraw();
-  });
+    isDrawing=true;
+    current={points:[],color:"#0c1e16",base:parseFloat(ui.thick.value||ui.thick2.value),smooth:parseFloat(ui.smooth.value||ui.smooth2.value)};
+    current.points.push(toCanvasCoords(e));
+  }
+  function extendStroke(e){
+    if(!isDrawing||!current) return;
+    e.preventDefault();
+    current.points.push(toCanvasCoords(e)); redraw();
+  }
+  function endStroke(e){
+    if(!isDrawing||!current) return;
+    e && e.preventDefault();
+    strokes.push(current); history.push({type:"stroke"}); current=null; isDrawing=false; redraw(); scheduleSave();
+  }
 
   /* ================= Buttons ================= */
   function doUndo(){
@@ -619,23 +582,15 @@
 
   function newPage(){
     strokes=[]; texts=[]; history=[]; current=null;
-    // If editing, hide and reset
     typing=false; activeText=null; hideEditor();
     redraw(); flashPerforation(); scheduleSave();
   }
   ui.clear?.addEventListener("click", newPage);
   ui.clear2?.addEventListener("click", ()=>{ newPage(); closePopover(); });
 
-  // Sync duplicate controls in popover and toolbar
+  // Sync duplicate controls
   function syncFont(from, to){ to.value = from.value; if(activeText){ activeText.font = to.value || ""; setEditorStyleFor(activeText); redraw(); scheduleSave(); } }
-  function syncSize(from, to){
-    to.value = from.value;
-    if(activeText){
-      activeText.size = Math.max(8, parseInt(to.value,10)||20);
-      setEditorStyleFor(activeText);
-      redraw(); scheduleSave();
-    }
-  }
+  function syncSize(from, to){ to.value = from.value; if(activeText){ activeText.size = Math.max(8, parseInt(to.value,10)||20); setEditorStyleFor(activeText); redraw(); scheduleSave(); } }
   function syncRange(from, to, key){ to.value = from.value; if(current) current[key] = parseFloat(to.value); }
 
   ui.fontSel.addEventListener("change", ()=> syncFont(ui.fontSel, ui.fontSel2));
@@ -689,15 +644,36 @@
     setCollapsed(preferCollapsed);
   })();
 
+  /* ================= Pointer routing (non-passive) ================= */
+  // Draw mode: start/extend/end strokes
+  ink.addEventListener("pointerdown", e=>{
+    ink.setPointerCapture(e.pointerId);
+    if (typeMode){ // In type mode, a tap places/edits text
+      startTypingAt(e);
+      return; // do not prevent default here; editor needs focus behavior
+    }
+    startStroke(e);
+  }, {passive:false});
+
+  ink.addEventListener("pointermove", e=>{
+    if (typeMode) return;
+    extendStroke(e);
+  }, {passive:false});
+
+  ink.addEventListener("pointerup", e=>{
+    if (typeMode) return;
+    ink.releasePointerCapture(e.pointerId);
+    endStroke(e);
+  }, {passive:false});
+
+  ink.addEventListener("pointercancel", e=>{
+    if (typeMode) return;
+    endStroke(e);
+  }, {passive:false});
+
   /* ================= Keyboard ================= */
   window.addEventListener("keydown",e=>{
-    // No 'u' shortcut anymore to avoid accidental undo while typing
-    if(e.key==="Escape"){
-      if(typeMode){
-        // Exit type mode entirely (committing text)
-        setTypeMode(false);
-      }
-    }
+    if(e.key==="Escape" && typeMode){ setTypeMode(false); }
   });
 
   /* ================= Perforation flash & Tear Off ================= */
@@ -707,7 +683,6 @@
     setTimeout(()=> el.classList.remove("tearing"), 800);
   }
   ui.tear.addEventListener("click",()=>{
-    // Commit any active editor first
     if(typing && activeText){ updateActiveTextFromEditor(); hideEditor(); typing=false; }
     const off=document.createElement("canvas");
     off.width=grid.width; off.height=grid.height;
@@ -727,14 +702,14 @@
 
   /* ================= Init ================= */
   function initialControlSync(){
-    ui.fontSel2.value = ui.fontSel.value;
+    const fs=ui.fontSel.value; ui.fontSel2.value = fs;
     ui.fontSize2.value = ui.fontSize.value;
     ui.thick2.value = ui.thick.value;
     ui.smooth2.value = ui.smooth.value;
   }
   initialControlSync();
-  updateSegUI();       // ensure pill matches default (Draw)
-  resizeAll();         // default: drawing mode
+  updateSegUI();       // pill reflects default Draw
+  resizeAll();         // layout & grid
 })();
 </script>
 </body>
